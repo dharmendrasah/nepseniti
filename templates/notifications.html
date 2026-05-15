@@ -1,219 +1,109 @@
 
+
 {% extends "base.html" %}
 
 {% block content %}
 
 <!-- HEADER -->
-<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-10">
-
-    <div>
-
-        <h1 class="text-4xl font-bold">
-            Telegram Notifications
-        </h1>
-
-        <p class="text-gray-400 mt-2">
-            Get daily NEPSE portfolio alerts directly on Telegram
-        </p>
-
-    </div>
-
+<div class="mb-10">
+    <h1 class="text-4xl font-bold">Telegram Notifications</h1>
+    <p class="text-gray-400 mt-2">दैनिक NEPSE portfolio alerts सिधै Telegram मा पाउनुहोस्</p>
 </div>
 
-<!-- MAIN GRID -->
-<div class="grid lg:grid-cols-2 gap-8">
-
-    <!-- LEFT SIDE -->
-    <div class="bg-gray-900 border border-gray-800 rounded-3xl p-8">
-
-        <h2 class="text-2xl font-bold mb-6">
-            Notification Settings
-        </h2>
-
-        <form method="POST" class="space-y-6">
-
-            <!-- CHAT ID -->
-            <div>
-
-                <label class="block mb-2 text-gray-300">
-                    Telegram Chat ID
-                </label>
-
-                <input
-                    type="text"
-                    name="chat_id"
-                    placeholder="1493102148"
-                    class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-red-500"
-                >
-
-            </div>
-
-            <!-- ENABLE TOGGLE -->
-            <div class="flex items-center justify-between bg-gray-800 rounded-2xl p-5">
-
-                <div>
-
-                    <h3 class="font-semibold text-lg">
-                        Enable Alerts
-                    </h3>
-
-                    <p class="text-gray-400 text-sm mt-1">
-                        Receive daily AI portfolio updates at 4 PM NST
-                    </p>
-
-                </div>
-
-                <label class="inline-flex items-center cursor-pointer">
-
-                    <input
-                        type="checkbox"
-                        name="alerts_enabled"
-                        class="sr-only peer"
-                    >
-
-                    <div class="relative w-14 h-7 bg-gray-700 rounded-full
-                        peer peer-checked:bg-red-600
-                        after:content-['']
-                        after:absolute
-                        after:top-[2px]
-                        after:left-[2px]
-                        after:bg-white
-                        after:rounded-full
-                        after:h-6
-                        after:w-6
-                        after:transition-all
-                        peer-checked:after:translate-x-full">
-
-                    </div>
-
-                </label>
-
-            </div>
-
-            <!-- BUTTONS -->
-            <div class="flex flex-wrap gap-4">
-
-                <button
-                    type="submit"
-                    class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-xl font-semibold"
-                >
-
-                    Save Settings
-
-                </button>
-
-                <a href="/test_alert"
-                   class="border border-gray-700 hover:border-gray-500 px-6 py-3 rounded-xl">
-
-                    Send Test Alert
-
-                </a>
-
-            </div>
-
-        </form>
-
+<!-- STATUS CARD -->
+{% if user.telegram_chat_id %}
+<div class="bg-green-900 border border-green-700 rounded-3xl p-6 mb-8">
+    <div class="flex items-center gap-4">
+        <div class="text-4xl">✅</div>
+        <div>
+            <h2 class="text-xl font-bold text-green-400">Telegram जोडिएको छ!</h2>
+            <p class="text-green-300 mt-1">Chat ID: {{ user.telegram_chat_id }}</p>
+            <p class="text-green-300">Alert: {{ "Enabled ✅" if user.alerts_enabled else "Disabled ❌" }}</p>
+        </div>
     </div>
+</div>
+{% else %}
+<div class="bg-yellow-900 border border-yellow-700 rounded-3xl p-6 mb-8">
+    <div class="flex items-center gap-4">
+        <div class="text-4xl">⚠️</div>
+        <div>
+            <h2 class="text-xl font-bold text-yellow-400">Telegram जोडिएको छैन!</h2>
+            <p class="text-yellow-300 mt-1">तलको steps follow गरेर bot जोड्नुहोस्।</p>
+        </div>
+    </div>
+</div>
+{% endif %}
 
-    <!-- RIGHT SIDE -->
+<!-- HOW TO CONNECT -->
+<div class="bg-gray-900 border border-gray-800 rounded-3xl p-8 mb-8">
+    <h2 class="text-2xl font-bold mb-6">🤖 Bot कसरी जोड्ने?</h2>
+
     <div class="space-y-6">
 
-        <!-- HOW TO GET CHAT ID -->
-        <div class="bg-gray-900 border border-gray-800 rounded-3xl p-8">
-
-            <h2 class="text-2xl font-bold mb-6">
-                How To Get Telegram Chat ID
-            </h2>
-
-            <div class="space-y-5 text-gray-300">
-
-                <div class="flex gap-4">
-
-                    <div class="bg-red-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">
-                        1
-                    </div>
-
-                    <div>
-                        Open Telegram and search for your bot
-                    </div>
-
-                </div>
-
-                <div class="flex gap-4">
-
-                    <div class="bg-red-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">
-                        2
-                    </div>
-
-                    <div>
-                        Start the bot by sending:
-                        <span class="text-red-400 font-bold">
-                            /start
-                        </span>
-                    </div>
-
-                </div>
-
-                <div class="flex gap-4">
-
-                    <div class="bg-red-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">
-                        3
-                    </div>
-
-                    <div>
-                        Visit this URL in browser:
-                    </div>
-
-                </div>
-
+        <div class="flex gap-4">
+            <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center font-bold flex-shrink-0">1</div>
+            <div>
+                <p class="font-semibold text-lg">Telegram खोल्नुहोस्</p>
+                <p class="text-gray-400">Search गर्नुहोस्: <span class="text-red-400 font-bold">@NepseNitiBot</span></p>
             </div>
-
-            <!-- URL BOX -->
-            <div class="bg-gray-950 border border-gray-800 rounded-2xl p-4 mt-6 overflow-x-auto">
-
-                <code class="text-green-400 text-sm">
-https://api.telegram.org/botYOUR_BOT_TOKEN/getUpdates
-                </code>
-
-            </div>
-
-            <p class="text-gray-400 mt-4 text-sm">
-                Find your chat ID inside the JSON response.
-            </p>
-
         </div>
 
-        <!-- BENEFITS -->
-        <div class="bg-gray-900 border border-gray-800 rounded-3xl p-8">
-
-            <h2 class="text-2xl font-bold mb-6">
-                What You Receive
-            </h2>
-
-            <div class="space-y-4">
-
-                <div class="bg-gray-800 rounded-2xl p-4">
-                    📈 Daily portfolio performance
-                </div>
-
-                <div class="bg-gray-800 rounded-2xl p-4">
-                    🤖 AI-powered Nepali insights
-                </div>
-
-                <div class="bg-gray-800 rounded-2xl p-4">
-                    🚨 Market movement alerts
-                </div>
-
-                <div class="bg-gray-800 rounded-2xl p-4">
-                    💰 Profit/Loss summary
-                </div>
-
+        <div class="flex gap-4">
+            <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center font-bold flex-shrink-0">2</div>
+            <div>
+                <p class="font-semibold text-lg">Bot Start गर्नुहोस्</p>
+                <p class="text-gray-400">Bot मा <span class="bg-gray-800 px-2 py-1 rounded font-mono">/start</span> पठाउनुहोस्</p>
             </div>
+        </div>
 
+        <div class="flex gap-4">
+            <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center font-bold flex-shrink-0">3</div>
+            <div>
+                <p class="font-semibold text-lg">Email पठाउनुहोस्</p>
+                <p class="text-gray-400">Bot ले email माग्नेछ। तपाईंको NepseNiti email पठाउनुहोस्: <span class="text-red-400">{{ user.email }}</span></p>
+            </div>
+        </div>
+
+        <div class="flex gap-4">
+            <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center font-bold flex-shrink-0">✓</div>
+            <div>
+                <p class="font-semibold text-lg">Done!</p>
+                <p class="text-gray-400">Bot ले confirm गर्नेछ। अब दैनिक <strong>४ बजे NST</strong> मा alert आउनेछ।</p>
+            </div>
         </div>
 
     </div>
 
+    <!-- OPEN BOT BUTTON -->
+    <div class="mt-8">
+        <a href="https://t.me/NepseNitiBot" target="_blank"
+           class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-2xl inline-block transition">
+            📱 Telegram Bot खोल्नुहोस्
+        </a>
+    </div>
+</div>
+
+<!-- TEST ALERT (only if connected) -->
+{% if user.telegram_chat_id %}
+<div class="bg-gray-900 border border-gray-800 rounded-3xl p-8 mb-8">
+    <h2 class="text-2xl font-bold mb-4">🧪 Test Alert</h2>
+    <p class="text-gray-400 mb-6">Telegram connection test गर्नुहोस्।</p>
+    <a href="/test_alert" class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-2xl inline-block transition">
+        Test Message पठाउनुहोस्
+    </a>
+</div>
+{% endif %}
+
+<!-- WHAT YOU RECEIVE -->
+<div class="bg-gray-900 border border-gray-800 rounded-3xl p-8">
+    <h2 class="text-2xl font-bold mb-6">📩 के पाउनुहुन्छ?</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-gray-800 rounded-2xl p-4">📈 दैनिक portfolio performance</div>
+        <div class="bg-gray-800 rounded-2xl p-4">🤖 AI-powered नेपाली analysis</div>
+        <div class="bg-gray-800 rounded-2xl p-4">💰 Profit/Loss summary</div>
+        <div class="bg-gray-800 rounded-2xl p-4">🚨 Market movement alerts</div>
+    </div>
 </div>
 
 {% endblock %}
+
