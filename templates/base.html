@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NepseNiti</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+<body class="bg-gray-950 text-white min-h-screen">
+
+    <!-- NAVBAR -->
+    <nav class="bg-gray-900 border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+
+            <a href="/" class="text-2xl font-bold text-red-500">
+                NepseNiti
+            </a>
+
+            <div class="space-x-4">
+
+                {% if session.get('user') %}
+
+                    <a href="/dashboard" class="text-gray-300 hover:text-white">
+                        Dashboard
+                    </a>
+
+                    <a href="/portfolio" class="text-gray-300 hover:text-white">
+                        Portfolio
+                    </a>
+
+                    <a href="/analysis" class="text-gray-300 hover:text-white">
+                        AI Analysis
+                    </a>
+
+                    <a href="/notifications" class="text-gray-300 hover:text-white">
+                        Notifications
+                    </a>
+
+                    <a href="/logout"
+                       class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg">
+                        Logout
+                    </a>
+
+                {% else %}
+
+                    <a href="/login"
+                       class="text-gray-300 hover:text-white">
+                        Login
+                    </a>
+
+                    <a href="/signup"
+                       class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg">
+                        Get Started
+                    </a>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+    </nav>
+
+    <!-- FLASH MESSAGES -->
+    <div class="max-w-7xl mx-auto px-4 mt-4">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% if messages %}
+
+                {% for category, message in messages %}
+
+                    <div class="mb-4 p-4 rounded-lg
+                        {% if category == 'success' %}
+                            bg-green-600
+                        {% else %}
+                            bg-red-600
+                        {% endif %}
+                    ">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+
+        {% block content %}
+        {% endblock %}
+
+    </main>
+
+</body>
+</html>

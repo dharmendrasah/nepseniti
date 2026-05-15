@@ -1,0 +1,132 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- HEADER -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-10">
+
+    <div>
+
+        <h1 class="text-4xl font-bold">
+            AI Portfolio Analysis
+        </h1>
+
+        <p class="text-gray-400 mt-2">
+            नेपाली भाषामा AI आधारित विश्लेषण
+        </p>
+
+    </div>
+
+    <div class="mt-6 md:mt-0">
+
+        <a href="/analysis"
+           class="bg-red-600 hover:bg-red-700 px-5 py-3 rounded-xl font-semibold">
+
+            Regenerate Analysis
+
+        </a>
+
+    </div>
+
+</div>
+
+<!-- AI ANALYSIS CARD -->
+<div class="bg-gray-900 border border-gray-800 rounded-3xl p-8">
+
+    <!-- TOP BAR -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+
+        <div>
+
+            <h2 class="text-2xl font-bold mb-2">
+                NepseNiti AI Insight
+            </h2>
+
+            <p class="text-gray-400">
+                AI-generated portfolio analysis
+            </p>
+
+        </div>
+
+        <div class="mt-4 md:mt-0 text-sm text-gray-500">
+
+            Generated:
+            {{ timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+
+        </div>
+
+    </div>
+
+    <!-- AI OUTPUT -->
+    <div class="bg-gray-950 border border-gray-800 rounded-2xl p-6">
+
+        <div class="prose prose-invert max-w-none">
+
+            <div class="whitespace-pre-wrap text-gray-200 leading-relaxed text-lg">
+{{ ai_text }}
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- INFO SECTION -->
+<div class="grid md:grid-cols-3 gap-6 mt-10">
+
+    <!-- CARD 1 -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+
+        <div class="text-4xl mb-4">
+            📊
+        </div>
+
+        <h3 class="text-xl font-bold mb-3">
+            Smart Analysis
+        </h3>
+
+        <p class="text-gray-400 leading-relaxed">
+            AI analyzes your NEPSE portfolio and gives personalized investment insights in Nepali language.
+        </p>
+
+    </div>
+
+    <!-- CARD 2 -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+
+        <div class="text-4xl mb-4">
+            ⚡
+        </div>
+
+        <h3 class="text-xl font-bold mb-3">
+            Instant Results
+        </h3>
+
+        <p class="text-gray-400 leading-relaxed">
+            Get professional-style market analysis instantly using advanced Llama AI models.
+        </p>
+
+    </div>
+
+    <!-- CARD 3 -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+
+        <div class="text-4xl mb-4">
+            🇳🇵
+        </div>
+
+        <h3 class="text-xl font-bold mb-3">
+            Nepali Language
+        </h3>
+
+        <p class="text-gray-400 leading-relaxed">
+            Analysis is generated completely in Nepali for better understanding by local investors.
+        </p>
+
+    </div>
+
+</div>
+
+{% endblock %}

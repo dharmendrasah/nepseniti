@@ -1,0 +1,219 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- HEADER -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-10">
+
+    <div>
+
+        <h1 class="text-4xl font-bold">
+            Telegram Notifications
+        </h1>
+
+        <p class="text-gray-400 mt-2">
+            Get daily NEPSE portfolio alerts directly on Telegram
+        </p>
+
+    </div>
+
+</div>
+
+<!-- MAIN GRID -->
+<div class="grid lg:grid-cols-2 gap-8">
+
+    <!-- LEFT SIDE -->
+    <div class="bg-gray-900 border border-gray-800 rounded-3xl p-8">
+
+        <h2 class="text-2xl font-bold mb-6">
+            Notification Settings
+        </h2>
+
+        <form method="POST" class="space-y-6">
+
+            <!-- CHAT ID -->
+            <div>
+
+                <label class="block mb-2 text-gray-300">
+                    Telegram Chat ID
+                </label>
+
+                <input
+                    type="text"
+                    name="chat_id"
+                    placeholder="1493102148"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-red-500"
+                >
+
+            </div>
+
+            <!-- ENABLE TOGGLE -->
+            <div class="flex items-center justify-between bg-gray-800 rounded-2xl p-5">
+
+                <div>
+
+                    <h3 class="font-semibold text-lg">
+                        Enable Alerts
+                    </h3>
+
+                    <p class="text-gray-400 text-sm mt-1">
+                        Receive daily AI portfolio updates at 4 PM NST
+                    </p>
+
+                </div>
+
+                <label class="inline-flex items-center cursor-pointer">
+
+                    <input
+                        type="checkbox"
+                        name="alerts_enabled"
+                        class="sr-only peer"
+                    >
+
+                    <div class="relative w-14 h-7 bg-gray-700 rounded-full
+                        peer peer-checked:bg-red-600
+                        after:content-['']
+                        after:absolute
+                        after:top-[2px]
+                        after:left-[2px]
+                        after:bg-white
+                        after:rounded-full
+                        after:h-6
+                        after:w-6
+                        after:transition-all
+                        peer-checked:after:translate-x-full">
+
+                    </div>
+
+                </label>
+
+            </div>
+
+            <!-- BUTTONS -->
+            <div class="flex flex-wrap gap-4">
+
+                <button
+                    type="submit"
+                    class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-xl font-semibold"
+                >
+
+                    Save Settings
+
+                </button>
+
+                <a href="/test_alert"
+                   class="border border-gray-700 hover:border-gray-500 px-6 py-3 rounded-xl">
+
+                    Send Test Alert
+
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="space-y-6">
+
+        <!-- HOW TO GET CHAT ID -->
+        <div class="bg-gray-900 border border-gray-800 rounded-3xl p-8">
+
+            <h2 class="text-2xl font-bold mb-6">
+                How To Get Telegram Chat ID
+            </h2>
+
+            <div class="space-y-5 text-gray-300">
+
+                <div class="flex gap-4">
+
+                    <div class="bg-red-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">
+                        1
+                    </div>
+
+                    <div>
+                        Open Telegram and search for your bot
+                    </div>
+
+                </div>
+
+                <div class="flex gap-4">
+
+                    <div class="bg-red-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">
+                        2
+                    </div>
+
+                    <div>
+                        Start the bot by sending:
+                        <span class="text-red-400 font-bold">
+                            /start
+                        </span>
+                    </div>
+
+                </div>
+
+                <div class="flex gap-4">
+
+                    <div class="bg-red-600 w-8 h-8 rounded-full flex items-center justify-center font-bold">
+                        3
+                    </div>
+
+                    <div>
+                        Visit this URL in browser:
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- URL BOX -->
+            <div class="bg-gray-950 border border-gray-800 rounded-2xl p-4 mt-6 overflow-x-auto">
+
+                <code class="text-green-400 text-sm">
+https://api.telegram.org/botYOUR_BOT_TOKEN/getUpdates
+                </code>
+
+            </div>
+
+            <p class="text-gray-400 mt-4 text-sm">
+                Find your chat ID inside the JSON response.
+            </p>
+
+        </div>
+
+        <!-- BENEFITS -->
+        <div class="bg-gray-900 border border-gray-800 rounded-3xl p-8">
+
+            <h2 class="text-2xl font-bold mb-6">
+                What You Receive
+            </h2>
+
+            <div class="space-y-4">
+
+                <div class="bg-gray-800 rounded-2xl p-4">
+                    📈 Daily portfolio performance
+                </div>
+
+                <div class="bg-gray-800 rounded-2xl p-4">
+                    🤖 AI-powered Nepali insights
+                </div>
+
+                <div class="bg-gray-800 rounded-2xl p-4">
+                    🚨 Market movement alerts
+                </div>
+
+                <div class="bg-gray-800 rounded-2xl p-4">
+                    💰 Profit/Loss summary
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

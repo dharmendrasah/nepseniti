@@ -1,0 +1,267 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- HEADER -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-10">
+
+    <div>
+
+        <h1 class="text-4xl font-bold">
+            नमस्ते, {{ user.name }}
+        </h1>
+
+        <p class="text-gray-400 mt-2">
+            Welcome back to NepseNiti Dashboard
+        </p>
+
+    </div>
+
+    <div class="mt-6 md:mt-0 flex flex-wrap gap-4">
+
+        <a href="/portfolio"
+           class="bg-red-600 hover:bg-red-700 px-5 py-3 rounded-xl font-semibold">
+
+            Manage Portfolio
+
+        </a>
+
+        <a href="/analysis"
+           class="border border-gray-700 hover:border-gray-500 px-5 py-3 rounded-xl">
+
+            AI Analysis
+
+        </a>
+
+    </div>
+
+</div>
+
+<!-- SUMMARY CARDS -->
+<div class="grid md:grid-cols-3 gap-6 mb-10">
+
+    <!-- TOTAL VALUE -->
+    <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6">
+
+        <p class="text-gray-400 mb-3">
+            Total Portfolio Value
+        </p>
+
+        <h2 class="text-4xl font-bold">
+            Rs. {{ "{:,.2f}".format(total_current) }}
+        </h2>
+
+    </div>
+
+    <!-- INVESTED -->
+    <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6">
+
+        <p class="text-gray-400 mb-3">
+            Total Invested
+        </p>
+
+        <h2 class="text-4xl font-bold">
+            Rs. {{ "{:,.2f}".format(total_invested) }}
+        </h2>
+
+    </div>
+
+    <!-- PROFIT LOSS -->
+    <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6">
+
+        <p class="text-gray-400 mb-3">
+            Total P/L
+        </p>
+
+        <h2 class="text-4xl font-bold
+            {% if total_pnl >= 0 %}
+                text-green-400
+            {% else %}
+                text-red-400
+            {% endif %}
+        ">
+
+            Rs. {{ "{:,.2f}".format(total_pnl) }}
+
+        </h2>
+
+    </div>
+
+</div>
+
+<!-- GAINERS LOSERS -->
+<div class="grid md:grid-cols-2 gap-6 mb-10">
+
+    <!-- TOP GAINERS -->
+    <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6">
+
+        <h2 class="text-2xl font-bold mb-6 text-green-400">
+            Top Gainers
+        </h2>
+
+        <div class="space-y-4">
+
+            {% for stock in gainers %}
+
+            <div class="flex justify-between items-center bg-gray-800 rounded-xl p-4">
+
+                <div>
+
+                    <p class="font-bold text-lg">
+                        {{ stock.s }}
+                    </p>
+
+                    <p class="text-gray-400 text-sm">
+                        Rs. {{ stock.lp }}
+                    </p>
+
+                </div>
+
+                <div class="text-green-400 font-bold text-lg">
+
+                    +{{ stock.pc }}%
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+    <!-- TOP LOSERS -->
+    <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6">
+
+        <h2 class="text-2xl font-bold mb-6 text-red-400">
+            Top Losers
+        </h2>
+
+        <div class="space-y-4">
+
+            {% for stock in losers %}
+
+            <div class="flex justify-between items-center bg-gray-800 rounded-xl p-4">
+
+                <div>
+
+                    <p class="font-bold text-lg">
+                        {{ stock.s }}
+                    </p>
+
+                    <p class="text-gray-400 text-sm">
+                        Rs. {{ stock.lp }}
+                    </p>
+
+                </div>
+
+                <div class="text-red-400 font-bold text-lg">
+
+                    {{ stock.pc }}%
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- HOLDINGS -->
+<div class="bg-gray-900 border border-gray-800 rounded-3xl p-6 overflow-x-auto">
+
+    <div class="flex items-center justify-between mb-6">
+
+        <h2 class="text-2xl font-bold">
+            Your Holdings
+        </h2>
+
+        <a href="/portfolio"
+           class="text-red-500 hover:text-red-400">
+
+            View Full Portfolio →
+
+        </a>
+
+    </div>
+
+    <table class="w-full">
+
+        <thead>
+
+            <tr class="text-left border-b border-gray-800 text-gray-400">
+
+                <th class="pb-4">Symbol</th>
+                <th class="pb-4">Qty</th>
+                <th class="pb-4">Buy Price</th>
+                <th class="pb-4">LTP</th>
+                <th class="pb-4">P/L</th>
+                <th class="pb-4">P/L %</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            {% for item in holdings %}
+
+            <tr class="border-b border-gray-800">
+
+                <td class="py-4 font-bold">
+                    {{ item.symbol }}
+                </td>
+
+                <td class="py-4">
+                    {{ item.qty }}
+                </td>
+
+                <td class="py-4">
+                    Rs. {{ item.buy_price }}
+                </td>
+
+                <td class="py-4">
+                    Rs. {{ item.ltp }}
+                </td>
+
+                <td class="py-4
+                    {% if item.pnl >= 0 %}
+                        text-green-400
+                    {% else %}
+                        text-red-400
+                    {% endif %}
+                ">
+
+                    Rs. {{ "{:,.2f}".format(item.pnl) }}
+
+                </td>
+
+                <td class="py-4
+                    {% if item.pnl_percent >= 0 %}
+                        text-green-400
+                    {% else %}
+                        text-red-400
+                    {% endif %}
+                ">
+
+                    {{ "{:.2f}".format(item.pnl_percent) }}%
+
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}
