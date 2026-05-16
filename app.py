@@ -43,47 +43,6 @@ headers = {
 
 client = Groq(api_key=GROQ_API_KEY)
 
-
-SECTOR_MAP = {
-    # Commercial Banks
-    "NABIL":"Banking","NBL":"Banking","NICA":"Banking","EBL":"Banking",
-    "SBI":"Banking","SANIMA":"Banking","MBL":"Banking","CBL":"Banking",
-    "PRVU":"Banking","KBL":"Banking","SRBL":"Banking","GBIME":"Banking",
-    "HBL":"Banking","NIMB":"Banking","NMB":"Banking","PCBL":"Banking",
-    "SBL":"Banking","ADBL":"Banking","CZBIL":"Banking","LSL":"Banking",
-    "BOKL":"Banking","MEGA":"Banking","CCBL":"Banking","JBNL":"Banking",
-    "NABBC":"Banking","RBB":"Banking","NBB":"Banking",
-    # Development Banks
-    "FMDBL":"Development Bank","NWCL":"Development Bank","MLBL":"Development Bank",
-    "SADBL":"Development Bank","EDBL":"Development Bank","MNBBL":"Development Bank",
-    "CORBL":"Development Bank","SAPDBL":"Development Bank","KSBBL":"Development Bank",
-    "SHINE":"Development Bank","SINDU":"Development Bank","HAMRO":"Development Bank",
-    # Finance
-    "HFIN":"Finance","SIFC":"Finance","UFL":"Finance","GFCL":"Finance",
-    "MFIL":"Finance","PFL":"Finance","ICFC":"Finance","CFCL":"Finance",
-    "RLFL":"Finance","JFL":"Finance","SFCL":"Finance","BESTL":"Finance",
-    # Hydropower
-    "NHDL":"Hydropower","NHPC":"Hydropower","UPPER":"Hydropower","RIDI":"Hydropower",
-    "AKPL":"Hydropower","RHPC":"Hydropower","RADHI":"Hydropower","SHL":"Hydropower",
-    "UHEWA":"Hydropower","MAKAR":"Hydropower","KPCL":"Hydropower","HPPL":"Hydropower",
-    "PMHPL":"Hydropower","BPCL":"Hydropower","GHL":"Hydropower","API":"Hydropower",
-    "NYADI":"Hydropower","DHPL":"Hydropower","DOLTI":"Hydropower","RKPCL":"Hydropower",
-    # Insurance
-    "NLIC":"Insurance","LICN":"Insurance","ALICL":"Insurance","GILC":"Insurance",
-    "SLICL":"Insurance","NICL":"Insurance","PICL":"Insurance","SICL":"Insurance",
-    "HGICL":"Insurance","RBCL":"Insurance","SGIC":"Insurance","SPICL":"Insurance",
-    "PRIN":"Insurance","AIL":"Insurance","NLG":"Insurance","IGI":"Insurance",
-    # Microfinance
-    "NCLBSL":"Microfinance","CBBL":"Microfinance","MLBSL":"Microfinance",
-    "SWBBL":"Microfinance","ILBS":"Microfinance","DDBL":"Microfinance",
-    "SKBBL":"Microfinance","SMFBS":"Microfinance","NESDO":"Microfinance",
-    "NICLBSL":"Microfinance","KMCDB":"Microfinance","MERO":"Microfinance",
-    # Others
-    "NTC":"Telecom","NIFRA":"Infrastructure","CIT":"Investment","NIBL":"Banking",
-    "CHCL":"Hydropower","PLIC":"Insurance","VLBS":"Microfinance",
-}
-
-
 # ============================================
 # TELEGRAM BOT STATE (in-memory)
 # Tracks users mid-conversation waiting to send email
@@ -124,6 +83,55 @@ def get_stock_price(symbol):
                 "volume": stock.get("q", 0)
             }
     return {"ltp": 0, "change": 0}
+
+
+def get_stock_detail(symbol):
+    """Fetch sector, 52w high/low, EPS, PE, book value from Merolagani"""
+    try:
+        url = f"https://merolagani.com/CompanyDetail.aspx?symbol={symbol.upper()}"
+        headers_ml = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers_ml, timeout=15)
+        html = response.text
+
+        import re
+
+        def extract(pattern, default="N/A"):
+            m = re.search(pattern, html, re.IGNORECASE | re.DOTALL)
+            return m.group(1).strip() if m else default
+
+        sector   = extract(r'<td[^>]*>\s*Sector\s*</td>\s*<td[^>]*>\s*([^<]+)')
+        high_low = extract(r'52 Weeks High - Low\s*</td>\s*<td[^>]*>\s*([^<]+)')
+        eps      = extract(r'>EPS\s*</td>\s*<td[^>]*>\s*([^<(]+)')
+        pe       = extract(r'P/E Ratio\s*</td>\s*<td[^>]*>\s*([^<]+)')
+        book_val = extract(r'Book Value\s*</td>\s*<td[^>]*>\s*([^<]+)')
+        avg_180  = extract(r'180 Day Average\s*</td>\s*<td[^>]*>\s*([^<]+)')
+
+        # parse 52w high and low
+        week52_high = week52_low = 0
+        if high_low != "N/A" and "-" in high_low:
+            parts = high_low.replace(",","").split("-")
+            try:
+                week52_high = float(parts[0].strip())
+                week52_low  = float(parts[1].strip())
+            except:
+                pass
+
+        return {
+            "sector":      sector,
+            "week52_high": week52_high,
+            "week52_low":  week52_low,
+            "eps":         eps.replace(",","").strip(),
+            "pe":          pe.replace(",","").strip(),
+            "book_value":  book_val.replace(",","").strip(),
+            "avg_180":     avg_180.replace(",","").strip(),
+        }
+    except Exception as e:
+        print(f"Detail fetch error for {symbol}: {e}")
+        return {
+            "sector": "Unknown", "week52_high": 0, "week52_low": 0,
+            "eps": "N/A", "pe": "N/A", "book_value": "N/A", "avg_180": "N/A"
+        }
+
 
 # ============================================
 # SEND TELEGRAM MESSAGE
@@ -670,129 +678,167 @@ def analysis():
     if "user" not in session:
         return redirect("/login")
 
-    user = session["user"]
-    email = user["email"]
+    user   = session["user"]
+    email  = user["email"]
 
-    url = f"{SUPABASE_URL}/rest/v1/portfolios?user_name=eq.{email}"
+    url      = f"{SUPABASE_URL}/rest/v1/portfolios?user_name=eq.{email}"
     response = requests.get(url, headers=headers)
     portfolio = response.json()
 
     if not portfolio:
-        return render_template("analysis.html", ai_text="Portfolio खाली छ। पहिले stocks थप्नुहोस्।", timestamp=datetime.now(), portfolio_data=[])
+        return render_template("analysis.html",
+            ai_text="Portfolio खाली छ। पहिले stocks थप्नुहोस्।",
+            timestamp=datetime.now(), portfolio_data=[],
+            total_invested=0, total_current=0, total_pnl=0, total_pnl_pct=0)
 
-    # ── Build rich stock context ──────────────────────────────────────────
     portfolio_data = []
     sector_summary = {}
     total_invested = 0
-    total_current = 0
+    total_current  = 0
 
     for item in portfolio:
-        symbol  = item["symbol"]
-        qty     = item["quantity"]
+        symbol    = item["symbol"]
+        qty       = item["quantity"]
         buy_price = item["buy_price"]
-        stock   = get_stock_price(symbol)
-        ltp     = stock["ltp"] if stock["ltp"] > 0 else buy_price
-        change  = stock["change"]
+
+        # live price
+        stock  = get_stock_price(symbol)
+        ltp    = stock["ltp"] if stock["ltp"] > 0 else buy_price
+        change = stock["change"]
+
+        # rich detail from merolagani
+        detail      = get_stock_detail(symbol)
+        sector      = detail["sector"] if detail["sector"] != "N/A" else "Other"
+        week52_high = detail["week52_high"]
+        week52_low  = detail["week52_low"]
+        eps         = detail["eps"]
+        pe          = detail["pe"]
+        book_value  = detail["book_value"]
+        avg_180     = detail["avg_180"]
+
         invested = qty * buy_price
         current  = qty * ltp
         pnl      = current - invested
         pnl_pct  = (pnl / invested * 100) if invested > 0 else 0
-        sector   = SECTOR_MAP.get(symbol.upper(), "Other")
 
         total_invested += invested
         total_current  += current
 
-        # sector grouping
+        # 52-week position
+        if week52_high > 0 and week52_low > 0:
+            range_pct = week52_high - week52_low
+            pos_pct   = ((ltp - week52_low) / range_pct * 100) if range_pct > 0 else 50
+            if pos_pct >= 80:
+                week52_note = f"५२ हप्ताको उच्च नजिक ({round(pos_pct,0)}%)"
+            elif pos_pct <= 25:
+                week52_note = f"५२ हप्ताको न्यून नजिक ({round(pos_pct,0)}%)"
+            else:
+                week52_note = f"५२ हप्ताको बीचमा ({round(pos_pct,0)}%)"
+        else:
+            week52_note = "N/A"
+
+        # signal logic
+        if pnl_pct >= 20:
+            signal        = "SELL ✅"
+            signal_reason = "२०%+ नाफा — आंशिक मुनाफा लिनुहोस्"
+        elif pnl_pct <= -20:
+            signal        = "REVIEW ⚠️"
+            signal_reason = "२०%+ घाटा — कारण बुझ्नुहोस्"
+        elif pnl_pct <= -10 and change < 0:
+            signal        = "WATCH 👁️"
+            signal_reason = "घाटामा छ र आज पनि घटेको छ"
+        elif week52_high > 0 and ltp >= week52_high * 0.95:
+            signal        = "SELL/HOLD 🟠"
+            signal_reason = "५२ हप्ताको उच्चमा — बेच्ने विचार गर्नुहोस्"
+        elif week52_low > 0 and ltp <= week52_low * 1.05:
+            signal        = "BUY/HOLD 🟢"
+            signal_reason = "५२ हप्ताको न्यूनमा — थप्ने अवसर हुन सक्छ"
+        elif change >= 3:
+            signal        = "HOLD 🟡"
+            signal_reason = "आज राम्रो गति छ"
+        else:
+            signal        = "HOLD 🟡"
+            signal_reason = "सामान्य अवस्थामा छ"
+
         if sector not in sector_summary:
             sector_summary[sector] = {"invested": 0, "current": 0, "stocks": []}
         sector_summary[sector]["invested"] += invested
         sector_summary[sector]["current"]  += current
         sector_summary[sector]["stocks"].append(symbol)
 
-        # signal logic
-        if pnl_pct >= 20:
-            signal = "SELL ✅"
-            signal_reason = "२०%+ नाफा भयो — आंशिक मुनाफा लिन सकिन्छ"
-        elif pnl_pct <= -15:
-            signal = "REVIEW ⚠️"
-            signal_reason = "१५%+ घाटा छ — कारण विश्लेषण गर्नुहोस्"
-        elif -5 <= pnl_pct <= 5 and change >= 0:
-            signal = "HOLD 🟡"
-            signal_reason = "स्थिर छ — थप जानकारी हेर्नुहोस्"
-        elif change >= 3:
-            signal = "HOLD 🟡"
-            signal_reason = "आज राम्रो गति छ"
-        elif change <= -3:
-            signal = "WATCH 👁️"
-            signal_reason = "आज घटेको छ — ट्रेन्ड हेर्नुहोस्"
-        else:
-            signal = "HOLD 🟡"
-            signal_reason = "सामान्य अवस्थामा छ"
-
         portfolio_data.append({
-            "symbol":   symbol,
-            "qty":      qty,
-            "buy_price": buy_price,
-            "ltp":      ltp,
-            "change":   change,
-            "invested": invested,
-            "current":  current,
-            "pnl":      pnl,
-            "pnl_pct":  pnl_pct,
-            "sector":   sector,
-            "signal":   signal,
+            "symbol":       symbol,
+            "qty":          qty,
+            "buy_price":    buy_price,
+            "ltp":          ltp,
+            "change":       change,
+            "invested":     invested,
+            "current":      current,
+            "pnl":          pnl,
+            "pnl_pct":      pnl_pct,
+            "sector":       sector,
+            "week52_high":  week52_high,
+            "week52_low":   week52_low,
+            "week52_note":  week52_note,
+            "eps":          eps,
+            "pe":           pe,
+            "book_value":   book_value,
+            "signal":       signal,
             "signal_reason": signal_reason,
         })
 
-    total_pnl = total_current - total_invested
+    total_pnl     = total_current - total_invested
     total_pnl_pct = (total_pnl / total_invested * 100) if total_invested > 0 else 0
 
-    # ── Build sector text for prompt ─────────────────────────────────────
+    # sector text
     sector_text = ""
     for sec, data in sector_summary.items():
         sec_pnl = data["current"] - data["invested"]
         sec_pct = (sec_pnl / data["invested"] * 100) if data["invested"] > 0 else 0
-        sector_text += f"- {sec}: {', '.join(data['stocks'])} → {'नाफा' if sec_pnl >= 0 else 'घाटा'} Rs.{round(sec_pnl, 0)} ({round(sec_pct, 1)}%)\n"
+        sector_text += f"- {sec}: {', '.join(data['stocks'])} → Rs.{round(sec_pnl,0)} ({round(sec_pct,1)}%)\n"
 
-    # ── Build per-stock text for prompt ──────────────────────────────────
+    # per-stock text for AI
     stock_text = ""
     for p in portfolio_data:
         stock_text += (
             f"• {p['symbol']} ({p['sector']}): {p['qty']} कित्ता, "
             f"खरिद Rs.{p['buy_price']}, LTP Rs.{p['ltp']}, "
-            f"आजको परिवर्तन {p['change']}%, "
-            f"नाफा/घाटा Rs.{round(p['pnl'],0)} ({round(p['pnl_pct'],1)}%), "
-            f"संकेत: {p['signal']}\n"
+            f"आज {p['change']}%, नाफा/घाटा Rs.{round(p['pnl'],0)} ({round(p['pnl_pct'],1)}%), "
+            f"५२ हप्ता High Rs.{p['week52_high']} / Low Rs.{p['week52_low']}, "
+            f"अवस्था: {p['week52_note']}, "
+            f"EPS: {p['eps']}, PE: {p['pe']}, Book Value: {p['book_value']}, "
+            f"Signal: {p['signal']}\n"
         )
 
-    # ── Smart Nepali prompt ───────────────────────────────────────────────
-    prompt = f"""तपाईं नेपाल शेयर बजारका एक अनुभवी र विश्वसनीय विश्लेषक हुनुहुन्छ। तपाईं सधैं नेपाली भाषामा स्पष्ट, व्यावहारिक र intelligent सुझाव दिनुहुन्छ।
+    prompt = f"""तपाईं नेपाल शेयर बजारका एक अनुभवी र विश्वसनीय विश्लेषक हुनुहुन्छ।
+तपाईंसँग प्रत्येक स्टकको sector, ५२ हप्ताको high/low, EPS, PE ratio, र book value जस्ता real data छ।
+यो data प्रयोग गरेर smart र specific analysis नेपाली भाषामा दिनुहोस्।
 
-===== पोर्टफोलियो विवरण =====
+===== Portfolio Data =====
 {stock_text}
 
-===== Sector Analysis =====
+===== Sector Summary =====
 {sector_text}
 
 ===== कुल अवस्था =====
-कुल लगानी: Rs.{round(total_invested, 0)}
-हालको मूल्य: Rs.{round(total_current, 0)}
-कुल नाफा/घाटा: Rs.{round(total_pnl, 0)} ({round(total_pnl_pct, 1)}%)
+कुल लगानी: Rs.{round(total_invested,0)}
+हालको मूल्य: Rs.{round(total_current,0)}
+कुल नाफा/घाटा: Rs.{round(total_pnl,0)} ({round(total_pnl_pct,1)}%)
 
 ===== तपाईंको काम =====
-तलका ३ भाग मा नेपाली भाषामा smart analysis दिनुहोस्:
+तलका ३ भागमा नेपाली भाषामा analysis दिनुहोस्:
 
 **१. प्रत्येक Stock को निर्णय:**
-प्रत्येक stock को लागि एउटा line मा लेख्नुहोस्:
-[SYMBOL] → [राख्नुहोस् / बेच्नुहोस् / थप किन्नुहोस् / हेर्नुहोस्] — [१ line मा कारण]
+प्रत्येक stock को लागि एउटा line मा:
+[SYMBOL] → [राख्नुहोस् / बेच्नुहोस् / थप किन्नुहोस् / हेर्नुहोस्] — [PE, EPS, ५२ हप्ता position, sector को आधारमा specific कारण]
 
 **२. Sector Analysis:**
-कुन sector राम्रो छ र कुन कमजोर छ — specific कारण सहित।
+कुन sector मा कति exposure छ र अहिले कुन sector राम्रो/कमजोर छ — specific reasons सहित।
 
 **३. Overall Strategy:**
-यो पोर्टफोलियोको लागि अहिले के गर्नु पर्छ? — ३-४ वटा concrete action points नेपालीमा।
+३-४ वटा concrete, actionable steps — stock names र numbers प्रयोग गरेर।
 
-सबै कुरा नेपाली भाषामा लेख्नुहोस्। Bold headings राख्नुहोस्। Generic कुरा नलेख्नुहोस् — specific stock names र numbers प्रयोग गर्नुहोस्।"""
+Generic कुरा नलेख्नुहोस्। Real data को आधारमा specific Nepali guidance दिनुहोस्।"""
 
     try:
         completion = client.chat.completions.create(

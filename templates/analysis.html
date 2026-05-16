@@ -1,64 +1,96 @@
 
 
 {% extends "base.html" %}
-
 {% block content %}
 
 <!-- HEADER -->
 <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
     <div>
         <h1 class="text-4xl font-bold">🤖 AI Portfolio Analysis</h1>
-        <p class="text-gray-400 mt-1">Smart stock recommendations in Nepali</p>
+        <p class="text-gray-400 mt-1">Real NEPSE data + Smart Nepali recommendations</p>
     </div>
-    <div class="mt-4 md:mt-0 flex gap-3">
-        <a href="/analysis" class="bg-red-600 hover:bg-red-700 px-5 py-2.5 rounded-xl font-semibold transition">
-            🔄 Regenerate
-        </a>
-    </div>
+    <a href="/analysis" class="mt-4 md:mt-0 bg-red-600 hover:bg-red-700 px-5 py-2.5 rounded-xl font-semibold transition">
+        🔄 Regenerate
+    </a>
 </div>
 
-<!-- QUICK SIGNALS (per stock cards) -->
 {% if portfolio_data %}
-<div class="mb-8">
-    <h2 class="text-xl font-bold mb-4">⚡ Quick Signals</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {% for item in portfolio_data %}
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4">
-            <div class="flex justify-between items-start mb-2">
-                <span class="font-bold text-lg">{{ item.symbol }}</span>
-                <span class="text-xs bg-gray-800 px-2 py-1 rounded-lg text-gray-400">{{ item.sector }}</span>
-            </div>
-            <div class="text-sm font-bold mb-1
-                {% if 'SELL' in item.signal %}text-red-400
-                {% elif 'HOLD' in item.signal %}text-yellow-400
-                {% elif 'REVIEW' in item.signal %}text-orange-400
-                {% else %}text-blue-400{% endif %}">
-                {{ item.signal }}
-            </div>
-            <div class="text-xs text-gray-400">{{ item.signal_reason }}</div>
-            <div class="mt-2 text-xs font-semibold
-                {% if item.pnl >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
-                {% if item.pnl >= 0 %}+{% endif %}{{ "{:.1f}".format(item.pnl_pct) }}%
-                (Rs.{{ "{:,.0f}".format(item.pnl) }})
-            </div>
+
+<!-- QUICK SIGNAL CARDS -->
+<h2 class="text-xl font-bold mb-3">⚡ Quick Signals</h2>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+    {% for item in portfolio_data %}
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4">
+        <div class="flex justify-between items-start mb-2">
+            <span class="font-bold text-lg">{{ item.symbol }}</span>
+            <span class="text-xs bg-gray-800 px-2 py-0.5 rounded-lg text-gray-400">{{ item.sector }}</span>
         </div>
-        {% endfor %}
+        <div class="text-sm font-bold mb-1
+            {% if 'SELL' in item.signal %}text-red-400
+            {% elif 'BUY' in item.signal %}text-green-400
+            {% elif 'REVIEW' in item.signal %}text-orange-400
+            {% elif 'WATCH' in item.signal %}text-blue-400
+            {% else %}text-yellow-400{% endif %}">
+            {{ item.signal }}
+        </div>
+        <div class="text-xs text-gray-400 mb-2">{{ item.signal_reason }}</div>
+        <div class="text-xs font-semibold {% if item.pnl >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+            {% if item.pnl >= 0 %}+{% endif %}{{ "{:.1f}".format(item.pnl_pct) }}%
+        </div>
     </div>
+    {% endfor %}
 </div>
 
-<!-- PORTFOLIO SUMMARY BAR -->
+<!-- STOCK DETAIL TABLE -->
+<div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-8 overflow-x-auto">
+    <h2 class="text-xl font-bold mb-4">📊 Stock Details (Live from Merolagani)</h2>
+    <table class="w-full min-w-[700px] text-sm">
+        <thead>
+            <tr class="text-left border-b border-gray-700 text-gray-400">
+                <th class="pb-3">Symbol</th>
+                <th class="pb-3">Sector</th>
+                <th class="pb-3">LTP</th>
+                <th class="pb-3">P/L%</th>
+                <th class="pb-3">52W High</th>
+                <th class="pb-3">52W Low</th>
+                <th class="pb-3">EPS</th>
+                <th class="pb-3">PE</th>
+                <th class="pb-3">Position</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in portfolio_data %}
+            <tr class="border-b border-gray-800 hover:bg-gray-800 transition">
+                <td class="py-3 font-bold">{{ item.symbol }}</td>
+                <td class="py-3 text-gray-400">{{ item.sector }}</td>
+                <td class="py-3">Rs.{{ item.ltp }}</td>
+                <td class="py-3 font-semibold {% if item.pnl_pct >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                    {% if item.pnl_pct >= 0 %}+{% endif %}{{ "{:.1f}".format(item.pnl_pct) }}%
+                </td>
+                <td class="py-3 text-green-400">{{ item.week52_high }}</td>
+                <td class="py-3 text-red-400">{{ item.week52_low }}</td>
+                <td class="py-3">{{ item.eps }}</td>
+                <td class="py-3">{{ item.pe }}</td>
+                <td class="py-3 text-xs text-gray-400">{{ item.week52_note }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- PORTFOLIO SUMMARY -->
 <div class="grid grid-cols-3 gap-4 mb-8">
     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 text-center">
         <p class="text-gray-400 text-sm">Invested</p>
-        <p class="font-bold text-lg">Rs.{{ "{:,.0f}".format(total_invested) }}</p>
+        <p class="font-bold">Rs.{{ "{:,.0f}".format(total_invested) }}</p>
     </div>
     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 text-center">
         <p class="text-gray-400 text-sm">Current Value</p>
-        <p class="font-bold text-lg">Rs.{{ "{:,.0f}".format(total_current) }}</p>
+        <p class="font-bold">Rs.{{ "{:,.0f}".format(total_current) }}</p>
     </div>
     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 text-center">
         <p class="text-gray-400 text-sm">Total P/L</p>
-        <p class="font-bold text-lg {% if total_pnl >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+        <p class="font-bold {% if total_pnl >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
             {% if total_pnl >= 0 %}+{% endif %}Rs.{{ "{:,.0f}".format(total_pnl) }}
             ({{ "{:.1f}".format(total_pnl_pct) }}%)
         </p>
@@ -66,7 +98,7 @@
 </div>
 {% endif %}
 
-<!-- AI ANALYSIS OUTPUT -->
+<!-- AI OUTPUT -->
 <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
     <div class="flex items-center gap-3 mb-6">
         <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-xl">🤖</div>
@@ -75,17 +107,14 @@
             <p class="text-gray-400 text-sm">{{ timestamp.strftime("%Y-%m-%d %I:%M %p") }} NST</p>
         </div>
     </div>
-
-    <!-- RENDER AI TEXT WITH FORMATTING -->
-    <div class="prose prose-invert max-w-none text-gray-200 leading-relaxed space-y-3" id="ai-output">
-        {% set lines = ai_text.split('\n') %}
-        {% for line in lines %}
-            {% if line.startswith('**') and line.endswith('**') %}
-                <h3 class="text-white font-bold text-lg mt-4 mb-2">{{ line.replace('**','') }}</h3>
-            {% elif line.startswith('•') or line.startswith('-') or line.startswith('*') %}
-                <p class="flex gap-2"><span class="text-red-400 flex-shrink-0">▸</span><span>{{ line[1:].strip() }}</span></p>
+    <div class="text-gray-200 leading-relaxed space-y-2">
+        {% for line in ai_text.split('\n') %}
+            {% if line.startswith('**') %}
+                <h3 class="text-white font-bold text-lg mt-5 mb-2 border-b border-gray-700 pb-1">{{ line.replace('**','') }}</h3>
+            {% elif line.startswith('•') or line.startswith('-') or line.startswith('▸') %}
+                <p class="flex gap-2 ml-2"><span class="text-red-400 flex-shrink-0">▸</span><span>{{ line[1:].strip() }}</span></p>
             {% elif line.strip() == '' %}
-                <div class="h-2"></div>
+                <div class="h-1"></div>
             {% else %}
                 <p>{{ line }}</p>
             {% endif %}
