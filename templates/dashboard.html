@@ -1,267 +1,245 @@
 
+
 {% extends "base.html" %}
 
 {% block content %}
 
 <!-- HEADER -->
-<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-10">
-
+<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
     <div>
-
-        <h1 class="text-4xl font-bold">
-            नमस्ते, {{ user.name }}
-        </h1>
-
-        <p class="text-gray-400 mt-2">
-            Welcome back to NepseNiti Dashboard
-        </p>
-
+        <h1 class="text-4xl font-bold">नमस्ते, {{ user.name }} 👋</h1>
+        <p class="text-gray-400 mt-1" id="live-time"></p>
     </div>
-
-    <div class="mt-6 md:mt-0 flex flex-wrap gap-4">
-
-        <a href="/portfolio"
-           class="bg-red-600 hover:bg-red-700 px-5 py-3 rounded-xl font-semibold">
-
-            Manage Portfolio
-
-        </a>
-
-        <a href="/analysis"
-           class="border border-gray-700 hover:border-gray-500 px-5 py-3 rounded-xl">
-
-            AI Analysis
-
-        </a>
-
+    <div class="mt-4 md:mt-0 flex flex-wrap gap-3">
+        <a href="/portfolio" class="bg-red-600 hover:bg-red-700 px-5 py-2.5 rounded-xl font-semibold transition">+ Stock थप्नुहोस्</a>
+        <a href="/analysis" class="border border-gray-700 hover:border-gray-500 px-5 py-2.5 rounded-xl transition">🤖 AI Analysis</a>
+        <a href="/notifications" class="border border-gray-700 hover:border-gray-500 px-5 py-2.5 rounded-xl transition">📱 Telegram</a>
     </div>
-
 </div>
 
 <!-- SUMMARY CARDS -->
-<div class="grid md:grid-cols-3 gap-6 mb-10">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
 
-    <!-- TOTAL VALUE -->
-    <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6">
-
-        <p class="text-gray-400 mb-3">
-            Total Portfolio Value
-        </p>
-
-        <h2 class="text-4xl font-bold">
-            Rs. {{ "{:,.2f}".format(total_current) }}
-        </h2>
-
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <p class="text-gray-400 text-sm mb-1">Portfolio Value</p>
+        <h2 class="text-2xl font-bold">Rs. {{ "{:,.0f}".format(total_current) }}</h2>
+        <p class="text-gray-500 text-xs mt-1">Current Market Value</p>
     </div>
 
-    <!-- INVESTED -->
-    <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6">
-
-        <p class="text-gray-400 mb-3">
-            Total Invested
-        </p>
-
-        <h2 class="text-4xl font-bold">
-            Rs. {{ "{:,.2f}".format(total_invested) }}
-        </h2>
-
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <p class="text-gray-400 text-sm mb-1">Total Invested</p>
+        <h2 class="text-2xl font-bold">Rs. {{ "{:,.0f}".format(total_invested) }}</h2>
+        <p class="text-gray-500 text-xs mt-1">Cost Basis</p>
     </div>
 
-    <!-- PROFIT LOSS -->
-    <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6">
-
-        <p class="text-gray-400 mb-3">
-            Total P/L
-        </p>
-
-        <h2 class="text-4xl font-bold
-            {% if total_pnl >= 0 %}
-                text-green-400
-            {% else %}
-                text-red-400
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <p class="text-gray-400 text-sm mb-1">Total P/L</p>
+        <h2 class="text-2xl font-bold {% if total_pnl >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+            {% if total_pnl >= 0 %}+{% endif %}Rs. {{ "{:,.0f}".format(total_pnl) }}
+        </h2>
+        <p class="text-xs mt-1 {% if total_pnl >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+            {% if total_invested > 0 %}
+                {% if total_pnl >= 0 %}▲{% else %}▼{% endif %}
+                {{ "{:.2f}".format((total_pnl / total_invested) * 100) }}%
             {% endif %}
-        ">
+        </p>
+    </div>
 
-            Rs. {{ "{:,.2f}".format(total_pnl) }}
-
-        </h2>
-
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <p class="text-gray-400 text-sm mb-1">Holdings</p>
+        <h2 class="text-2xl font-bold">{{ holdings|length }}</h2>
+        <p class="text-gray-500 text-xs mt-1">Stocks</p>
     </div>
 
 </div>
 
-<!-- GAINERS LOSERS -->
-<div class="grid md:grid-cols-2 gap-6 mb-10">
+<!-- CHART + ALLOCATION -->
+{% if holdings %}
+<div class="grid md:grid-cols-2 gap-6 mb-8">
+
+    <!-- P/L BAR CHART -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <h2 class="text-xl font-bold mb-4">Stock-wise P/L</h2>
+        <canvas id="plChart" height="220"></canvas>
+    </div>
+
+    <!-- ALLOCATION PIE CHART -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <h2 class="text-xl font-bold mb-4">Portfolio Allocation</h2>
+        <canvas id="allocChart" height="220"></canvas>
+    </div>
+
+</div>
+{% endif %}
+
+<!-- GAINERS + LOSERS -->
+<div class="grid md:grid-cols-2 gap-6 mb-8">
 
     <!-- TOP GAINERS -->
-    <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6">
-
-        <h2 class="text-2xl font-bold mb-6 text-green-400">
-            Top Gainers
-        </h2>
-
-        <div class="space-y-4">
-
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <h2 class="text-xl font-bold mb-4 text-green-400">📈 Top Gainers</h2>
+        <div class="space-y-3">
             {% for stock in gainers %}
-
-            <div class="flex justify-between items-center bg-gray-800 rounded-xl p-4">
-
+            <div class="flex justify-between items-center bg-gray-800 hover:bg-gray-750 rounded-xl px-4 py-3 transition">
                 <div>
-
-                    <p class="font-bold text-lg">
-                        {{ stock.s }}
-                    </p>
-
-                    <p class="text-gray-400 text-sm">
-                        Rs. {{ stock.lp }}
-                    </p>
-
+                    <p class="font-bold">{{ stock.s }}</p>
+                    <p class="text-gray-400 text-sm">Rs. {{ stock.lp }}</p>
                 </div>
-
-                <div class="text-green-400 font-bold text-lg">
-
-                    +{{ stock.pc }}%
-
+                <div class="text-right">
+                    <span class="bg-green-900 text-green-400 font-bold px-3 py-1 rounded-lg text-sm">+{{ stock.pc }}%</span>
                 </div>
-
             </div>
-
             {% endfor %}
-
         </div>
-
     </div>
 
     <!-- TOP LOSERS -->
-    <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6">
-
-        <h2 class="text-2xl font-bold mb-6 text-red-400">
-            Top Losers
-        </h2>
-
-        <div class="space-y-4">
-
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <h2 class="text-xl font-bold mb-4 text-red-400">📉 Top Losers</h2>
+        <div class="space-y-3">
             {% for stock in losers %}
-
-            <div class="flex justify-between items-center bg-gray-800 rounded-xl p-4">
-
+            <div class="flex justify-between items-center bg-gray-800 hover:bg-gray-750 rounded-xl px-4 py-3 transition">
                 <div>
-
-                    <p class="font-bold text-lg">
-                        {{ stock.s }}
-                    </p>
-
-                    <p class="text-gray-400 text-sm">
-                        Rs. {{ stock.lp }}
-                    </p>
-
+                    <p class="font-bold">{{ stock.s }}</p>
+                    <p class="text-gray-400 text-sm">Rs. {{ stock.lp }}</p>
                 </div>
-
-                <div class="text-red-400 font-bold text-lg">
-
-                    {{ stock.pc }}%
-
+                <div class="text-right">
+                    <span class="bg-red-900 text-red-400 font-bold px-3 py-1 rounded-lg text-sm">{{ stock.pc }}%</span>
                 </div>
-
             </div>
-
             {% endfor %}
-
         </div>
-
     </div>
 
 </div>
 
-<!-- HOLDINGS -->
-<div class="bg-gray-900 border border-gray-800 rounded-3xl p-6 overflow-x-auto">
-
+<!-- HOLDINGS TABLE -->
+<div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 overflow-x-auto mb-8">
     <div class="flex items-center justify-between mb-6">
-
-        <h2 class="text-2xl font-bold">
-            Your Holdings
-        </h2>
-
-        <a href="/portfolio"
-           class="text-red-500 hover:text-red-400">
-
-            View Full Portfolio →
-
-        </a>
-
+        <h2 class="text-xl font-bold">Your Holdings</h2>
+        <a href="/portfolio" class="text-red-500 hover:text-red-400 text-sm">Full Portfolio →</a>
     </div>
 
-    <table class="w-full">
-
+    {% if holdings %}
+    <table class="w-full min-w-[600px]">
         <thead>
-
-            <tr class="text-left border-b border-gray-800 text-gray-400">
-
-                <th class="pb-4">Symbol</th>
-                <th class="pb-4">Qty</th>
-                <th class="pb-4">Buy Price</th>
-                <th class="pb-4">LTP</th>
-                <th class="pb-4">P/L</th>
-                <th class="pb-4">P/L %</th>
-
+            <tr class="text-left border-b border-gray-800 text-gray-400 text-sm">
+                <th class="pb-3">Symbol</th>
+                <th class="pb-3">Qty</th>
+                <th class="pb-3">Buy Price</th>
+                <th class="pb-3">LTP</th>
+                <th class="pb-3">Change</th>
+                <th class="pb-3">Invested</th>
+                <th class="pb-3">Value</th>
+                <th class="pb-3">P/L</th>
             </tr>
-
         </thead>
-
         <tbody>
-
             {% for item in holdings %}
-
-            <tr class="border-b border-gray-800">
-
-                <td class="py-4 font-bold">
-                    {{ item.symbol }}
+            <tr class="border-b border-gray-800 hover:bg-gray-800 transition">
+                <td class="py-3 font-bold text-white">{{ item.symbol }}</td>
+                <td class="py-3 text-gray-300">{{ item.qty }}</td>
+                <td class="py-3 text-gray-300">{{ "{:,.2f}".format(item.buy_price) }}</td>
+                <td class="py-3 font-semibold">{{ "{:,.2f}".format(item.ltp) }}</td>
+                <td class="py-3 {% if item.change >= 0 %}text-green-400{% else %}text-red-400{% endif %} font-semibold">
+                    {% if item.change >= 0 %}+{% endif %}{{ item.change }}%
                 </td>
-
-                <td class="py-4">
-                    {{ item.qty }}
+                <td class="py-3 text-gray-300">{{ "{:,.0f}".format(item.invested) }}</td>
+                <td class="py-3 text-gray-300">{{ "{:,.0f}".format(item.current) }}</td>
+                <td class="py-3 font-bold {% if item.pnl >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                    {% if item.pnl >= 0 %}+{% endif %}{{ "{:,.0f}".format(item.pnl) }}
+                    <span class="text-xs ml-1">({{ "{:.1f}".format(item.pnl_percent) }}%)</span>
                 </td>
-
-                <td class="py-4">
-                    Rs. {{ item.buy_price }}
-                </td>
-
-                <td class="py-4">
-                    Rs. {{ item.ltp }}
-                </td>
-
-                <td class="py-4
-                    {% if item.pnl >= 0 %}
-                        text-green-400
-                    {% else %}
-                        text-red-400
-                    {% endif %}
-                ">
-
-                    Rs. {{ "{:,.2f}".format(item.pnl) }}
-
-                </td>
-
-                <td class="py-4
-                    {% if item.pnl_percent >= 0 %}
-                        text-green-400
-                    {% else %}
-                        text-red-400
-                    {% endif %}
-                ">
-
-                    {{ "{:.2f}".format(item.pnl_percent) }}%
-
-                </td>
-
             </tr>
-
             {% endfor %}
-
         </tbody>
-
     </table>
-
+    {% else %}
+    <div class="text-center py-16">
+        <p class="text-6xl mb-4">📊</p>
+        <p class="text-xl font-semibold mb-2">Portfolio खाली छ!</p>
+        <p class="text-gray-400 mb-6">आफ्नो पहिलो stock थप्नुहोस्।</p>
+        <a href="/portfolio" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-xl font-semibold transition">+ Stock थप्नुहोस्</a>
+    </div>
+    {% endif %}
 </div>
+
+<!-- TELEGRAM BANNER (if not connected) -->
+{% if not user.telegram_chat_id %}
+<div class="bg-blue-900 border border-blue-700 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+    <div>
+        <h3 class="text-lg font-bold">📱 Telegram Alert सेटअप गर्नुहोस्!</h3>
+        <p class="text-blue-300 text-sm mt-1">दैनिक ४ बजे portfolio alert पाउनुहोस् - @NepseNitiBot मा /start गर्नुहोस्</p>
+    </div>
+    <a href="/notifications" class="bg-blue-600 hover:bg-blue-700 px-6 py-2.5 rounded-xl font-semibold transition whitespace-nowrap">Setup गर्नुहोस्</a>
+</div>
+{% endif %}
+
+<!-- CHART.JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Live time
+function updateTime() {
+    const now = new Date();
+    const nst = new Date(now.getTime() + (5*60 + 45)*60*1000);
+    document.getElementById('live-time').textContent =
+        nst.toUTCString().replace('GMT', 'NST').slice(0, -4);
+}
+updateTime();
+setInterval(updateTime, 1000);
+
+{% if holdings %}
+// P/L BAR CHART
+const plCtx = document.getElementById('plChart').getContext('2d');
+new Chart(plCtx, {
+    type: 'bar',
+    data: {
+        labels: [{% for item in holdings %}'{{ item.symbol }}',{% endfor %}],
+        datasets: [{
+            label: 'P/L (Rs.)',
+            data: [{% for item in holdings %}{{ "{:.0f}".format(item.pnl) }},{% endfor %}],
+            backgroundColor: [{% for item in holdings %}
+                '{{ "rgba(74,222,128,0.8)" if item.pnl >= 0 else "rgba(248,113,113,0.8)" }}',
+            {% endfor %}],
+            borderRadius: 8,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { ticks: { color: '#9ca3af' }, grid: { color: '#1f2937' } },
+            y: { ticks: { color: '#9ca3af' }, grid: { color: '#1f2937' } }
+        }
+    }
+});
+
+// ALLOCATION PIE CHART
+const allocCtx = document.getElementById('allocChart').getContext('2d');
+const colors = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f59e0b','#6366f1'];
+new Chart(allocCtx, {
+    type: 'doughnut',
+    data: {
+        labels: [{% for item in holdings %}'{{ item.symbol }}',{% endfor %}],
+        datasets: [{
+            data: [{% for item in holdings %}{{ "{:.0f}".format(item.current) }},{% endfor %}],
+            backgroundColor: colors.slice(0, {{ holdings|length }}),
+            borderColor: '#111827',
+            borderWidth: 3,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'right',
+                labels: { color: '#9ca3af', padding: 12, font: { size: 12 } }
+            }
+        }
+    }
+});
+{% endif %}
+</script>
 
 {% endblock %}
+
