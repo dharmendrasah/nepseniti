@@ -183,29 +183,57 @@ def get_market_data():
         response = requests.get(url, timeout=20)
         if response.status_code == 200:
             data = response.json()
-            stocks = data.get("turnover", {}).get("detail", [])
-            return stocks
-        return []
+            stocks  = data.get("turnover", {}).get("detail", [])
+            sectors = data.get("sector",   {}).get("detail", [])
+            overall = data.get("overall",  {})
+            return {"stocks": stocks, "sectors": sectors, "overall": overall}
+        return {"stocks": [], "sectors": [], "overall": {}}
     except Exception as e:
         print("Market data error:", e)
-        return []
+        return {"stocks": [], "sectors": [], "overall": {}}
+
 
 # ============================================
 # GET STOCK PRICE
 # ============================================
 
 def get_stock_price(symbol):
-    stocks = get_market_data()
+    market = get_market_data()
+    stocks = market["stocks"]
     for stock in stocks:
         if stock.get("s") == symbol.upper():
+            ltp    = float(stock.get("lp",  0))
+            change = float(stock.get("pc",  0))
+            high   = float(stock.get("h",   0))
+            low    = float(stock.get("l",   0))
+            open_  = float(stock.get("op",  0))
+            volume = float(stock.get("q",   0))
+            turnover = float(stock.get("t", 0))
+
+            # intraday trend: LTP vs Open
+            if open_ > 0:
+                intraday_chg = round((ltp - open_) / open_ * 100, 2)
+            else:
+                intraday_chg = 0
+
+            # volume flag
+            avg_vol_threshold = 50000
+            volume_flag = "सक्रिय 🔥" if volume >= avg_vol_threshold else "सामान्य"
+
             return {
-                "ltp": float(stock.get("lp", 0)),
-                "change": float(stock.get("pc", 0)),
-                "high": stock.get("h", 0),
-                "low": stock.get("l", 0),
-                "volume": stock.get("q", 0)
+                "ltp": ltp, "change": change,
+                "high": high, "low": low,
+                "open": open_, "volume": volume,
+                "turnover": turnover,
+                "intraday_chg": intraday_chg,
+                "volume_flag": volume_flag,
             }
-    return {"ltp": 0, "change": 0}
+    return {
+        "ltp": 0, "change": 0, "high": 0, "low": 0,
+        "open": 0, "volume": 0, "turnover": 0,
+        "intraday_chg": 0, "volume_flag": "N/A",
+    }
+
 
 # ============================================
 # SEND TELEGRAM MESSAGE
@@ -595,48 +623,95 @@ def dashboard():
     if "user" not in session:
         return redirect("/login")
 
-    user = session["user"]
+    user  = session["user"]
     email = user["email"]
 
-    url = f"{SUPABASE_URL}/rest/v1/portfolios?user_name=eq.{email}"
-    response = requests.get(url, headers=headers)
-    portfolio = response.json()
+    # Refresh user from DB for telegram status
+    u_url = f"{SUPABASE_URL}/rest/v1/Users?email=eq.{email}"
+    u_resp = requests.get(u_url, headers=headers)
+    if u_resp.status_code == 200 and u_resp.json():
+        session["user"] = u_resp.json()[0]
+        user = session["user"]
 
+    # Portfolio
+    p_url  = f"{SUPABASE_URL}/rest/v1/portfolios?user_name=eq.{email}"
+    p_resp = requests.get(p_url, headers=headers)
+    portfolio = p_resp.json()
+
+    # Market data (one call, reuse)
+    market  = get_market_data()
+    stocks  = market["stocks"]
+    sectors = market["sectors"]
+    overall = market["overall"]
+
+    # Build stock lookup dict for speed
+    stock_lookup = {s["s"]: s for s in stocks}
+
+    # ── Portfolio holdings ────────────────────────────────────────────────
     total_invested = 0
-    total_current = 0
+    total_current  = 0
     holdings = []
 
     for item in portfolio:
-        symbol = item["symbol"]
-        qty = item["quantity"]
+        symbol    = item["symbol"]
+        qty       = item["quantity"]
         buy_price = item["buy_price"]
-        stock = get_stock_price(symbol)
-        ltp = stock["ltp"]
+        s = stock_lookup.get(symbol.upper(), {})
+        ltp      = float(s.get("lp",  buy_price))
+        change   = float(s.get("pc",  0))
+        volume   = float(s.get("q",   0))
+        open_    = float(s.get("op",  0))
+        high     = float(s.get("h",   0))
+        low      = float(s.get("l",   0))
+        turnover = float(s.get("t",   0))
+
+        intraday_chg = round((ltp - open_) / open_ * 100, 2) if open_ > 0 else 0
+        volume_flag  = "🔥" if volume >= 50000 else ""
+
         invested = qty * buy_price
-        current = qty * ltp
-        pnl = current - invested
-        pnl_percent = 0
-        if invested > 0:
-            pnl_percent = (pnl / invested) * 100
+        current  = qty * ltp
+        pnl      = current - invested
+        pnl_pct  = (pnl / invested * 100) if invested > 0 else 0
+
         total_invested += invested
-        total_current += current
+        total_current  += current
+
         holdings.append({
-            "symbol": symbol,
-            "qty": qty,
-            "buy_price": buy_price,
-            "ltp": ltp,
-            "invested": invested,
-            "current": current,
-            "pnl": pnl,
-            "pnl_percent": pnl_percent,
-            "change": stock["change"]
+            "symbol": symbol, "qty": qty,
+            "buy_price": buy_price, "ltp": ltp,
+            "change": change, "high": high, "low": low,
+            "volume": int(volume), "volume_flag": volume_flag,
+            "intraday_chg": intraday_chg,
+            "invested": invested, "current": current,
+            "pnl": pnl, "pnl_pct": pnl_pct,
         })
 
-    total_pnl = total_current - total_invested
+    total_pnl     = total_current - total_invested
+    total_pnl_pct = (total_pnl / total_invested * 100) if total_invested > 0 else 0
 
-    stocks = get_market_data()
+    # ── Gainers / Losers ──────────────────────────────────────────────────
     gainers = sorted(stocks, key=lambda x: float(x.get("pc", 0)), reverse=True)[:5]
-    losers = sorted(stocks, key=lambda x: float(x.get("pc", 0)))[:5]
+    losers  = sorted(stocks, key=lambda x: float(x.get("pc", 0)))[:5]
+
+    # ── Sector heat ───────────────────────────────────────────────────────
+    total_sector_turnover = sum(float(s.get("t", 0)) for s in sectors)
+    sector_heat = []
+    for sec in sorted(sectors, key=lambda x: float(x.get("t", 0)), reverse=True)[:8]:
+        t = float(sec.get("t", 0))
+        pct = round(t / total_sector_turnover * 100, 1) if total_sector_turnover > 0 else 0
+        sector_heat.append({
+            "name": sec["s"],
+            "turnover": t,
+            "pct": pct,
+        })
+
+    # ── Market overview ───────────────────────────────────────────────────
+    market_overview = {
+        "total_turnover": float(overall.get("t", 0)),
+        "total_volume":   overall.get("q", "0"),
+        "total_txn":      overall.get("tn", "0"),
+        "stocks_traded":  overall.get("st", "0"),
+    }
 
     return render_template(
         "dashboard.html",
@@ -645,9 +720,13 @@ def dashboard():
         total_invested=total_invested,
         total_current=total_current,
         total_pnl=total_pnl,
+        total_pnl_pct=total_pnl_pct,
         gainers=gainers,
-        losers=losers
+        losers=losers,
+        sector_heat=sector_heat,
+        market_overview=market_overview,
     )
+
 
 # ============================================
 # PORTFOLIO

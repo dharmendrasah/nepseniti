@@ -1,7 +1,6 @@
 
 
 {% extends "base.html" %}
-
 {% block content %}
 
 <!-- HEADER -->
@@ -12,143 +11,175 @@
     </div>
     <div class="mt-4 md:mt-0 flex flex-wrap gap-3">
         <a href="/portfolio" class="bg-red-600 hover:bg-red-700 px-5 py-2.5 rounded-xl font-semibold transition">+ Stock थप्नुहोस्</a>
-        <a href="/analysis" class="border border-gray-700 hover:border-gray-500 px-5 py-2.5 rounded-xl transition">🤖 AI Analysis</a>
-        <a href="/notifications" class="border border-gray-700 hover:border-gray-500 px-5 py-2.5 rounded-xl transition">📱 Telegram</a>
+        <a href="/analysis"  class="border border-gray-700 hover:border-gray-500 px-5 py-2.5 rounded-xl transition">🤖 AI Analysis</a>
     </div>
 </div>
 
-<!-- SUMMARY CARDS -->
+<!-- PORTFOLIO SUMMARY CARDS -->
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-
     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
         <p class="text-gray-400 text-sm mb-1">Portfolio Value</p>
-        <h2 class="text-2xl font-bold">Rs. {{ "{:,.0f}".format(total_current) }}</h2>
+        <h2 class="text-2xl font-bold">Rs.{{ "{:,.0f}".format(total_current) }}</h2>
         <p class="text-gray-500 text-xs mt-1">Current Market Value</p>
     </div>
-
     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-        <p class="text-gray-400 text-sm mb-1">Total Invested</p>
-        <h2 class="text-2xl font-bold">Rs. {{ "{:,.0f}".format(total_invested) }}</h2>
-        <p class="text-gray-500 text-xs mt-1">Cost Basis</p>
+        <p class="text-gray-400 text-sm mb-1">Invested</p>
+        <h2 class="text-2xl font-bold">Rs.{{ "{:,.0f}".format(total_invested) }}</h2>
+        <p class="text-gray-500 text-xs mt-1">Total Cost Basis</p>
     </div>
-
     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
         <p class="text-gray-400 text-sm mb-1">Total P/L</p>
         <h2 class="text-2xl font-bold {% if total_pnl >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
-            {% if total_pnl >= 0 %}+{% endif %}Rs. {{ "{:,.0f}".format(total_pnl) }}
+            {% if total_pnl >= 0 %}+{% endif %}Rs.{{ "{:,.0f}".format(total_pnl) }}
         </h2>
         <p class="text-xs mt-1 {% if total_pnl >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
-            {% if total_invested > 0 %}
-                {% if total_pnl >= 0 %}▲{% else %}▼{% endif %}
-                {{ "{:.2f}".format((total_pnl / total_invested) * 100) }}%
-            {% endif %}
+            {% if total_pnl >= 0 %}▲{% else %}▼{% endif %} {{ "{:.2f}".format(total_pnl_pct) }}%
         </p>
     </div>
-
     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
         <p class="text-gray-400 text-sm mb-1">Holdings</p>
         <h2 class="text-2xl font-bold">{{ holdings|length }}</h2>
         <p class="text-gray-500 text-xs mt-1">Stocks</p>
     </div>
-
 </div>
 
-<!-- CHART + ALLOCATION -->
+<!-- MARKET OVERVIEW -->
+<div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-8">
+    <h2 class="text-xl font-bold mb-4">📊 आजको बजार (Today's Market)</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-gray-800 rounded-xl p-4 text-center">
+            <p class="text-gray-400 text-xs mb-1">Total Turnover</p>
+            <p class="font-bold text-lg">Rs.{{ "{:,.0f}".format(market_overview.total_turnover / 10000000) }}Cr</p>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-4 text-center">
+            <p class="text-gray-400 text-xs mb-1">Total Volume</p>
+            <p class="font-bold text-lg">{{ "{:,}".format(market_overview.total_volume|int) }}</p>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-4 text-center">
+            <p class="text-gray-400 text-xs mb-1">Transactions</p>
+            <p class="font-bold text-lg">{{ "{:,}".format(market_overview.total_txn|int) }}</p>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-4 text-center">
+            <p class="text-gray-400 text-xs mb-1">Stocks Traded</p>
+            <p class="font-bold text-lg">{{ market_overview.stocks_traded }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- SECTOR HEAT -->
+<div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-8">
+    <h2 class="text-xl font-bold mb-4">🔥 Sector Heat (आजको कारोबार)</h2>
+    <div class="space-y-3">
+        {% for sec in sector_heat %}
+        <div>
+            <div class="flex justify-between text-sm mb-1">
+                <span class="font-semibold">{{ sec.name }}</span>
+                <span class="text-gray-400">Rs.{{ "{:,.0f}".format(sec.turnover / 10000000) }}Cr  ({{ sec.pct }}%)</span>
+            </div>
+            <div class="w-full bg-gray-800 rounded-full h-2">
+                <div class="h-2 rounded-full
+                    {% if loop.index == 1 %}bg-red-500
+                    {% elif loop.index == 2 %}bg-orange-500
+                    {% elif loop.index == 3 %}bg-yellow-500
+                    {% else %}bg-blue-600{% endif %}"
+                    style="width: {{ sec.pct }}%">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- CHARTS -->
 {% if holdings %}
 <div class="grid md:grid-cols-2 gap-6 mb-8">
-
-    <!-- P/L BAR CHART -->
     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-        <h2 class="text-xl font-bold mb-4">Stock-wise P/L</h2>
+        <h2 class="text-xl font-bold mb-4">📈 Stock-wise P/L</h2>
         <canvas id="plChart" height="220"></canvas>
     </div>
-
-    <!-- ALLOCATION PIE CHART -->
     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-        <h2 class="text-xl font-bold mb-4">Portfolio Allocation</h2>
+        <h2 class="text-xl font-bold mb-4">🥧 Portfolio Allocation</h2>
         <canvas id="allocChart" height="220"></canvas>
     </div>
-
 </div>
 {% endif %}
 
-<!-- GAINERS + LOSERS -->
+<!-- GAINERS / LOSERS -->
 <div class="grid md:grid-cols-2 gap-6 mb-8">
-
-    <!-- TOP GAINERS -->
     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
         <h2 class="text-xl font-bold mb-4 text-green-400">📈 Top Gainers</h2>
-        <div class="space-y-3">
+        <div class="space-y-2">
             {% for stock in gainers %}
-            <div class="flex justify-between items-center bg-gray-800 hover:bg-gray-750 rounded-xl px-4 py-3 transition">
+            <div class="flex justify-between items-center bg-gray-800 rounded-xl px-4 py-3">
                 <div>
                     <p class="font-bold">{{ stock.s }}</p>
-                    <p class="text-gray-400 text-sm">Rs. {{ stock.lp }}</p>
+                    <p class="text-gray-400 text-xs">Rs.{{ stock.lp }} &nbsp;|&nbsp; Vol: {{ "{:,}".format(stock.q|int) }}</p>
                 </div>
-                <div class="text-right">
-                    <span class="bg-green-900 text-green-400 font-bold px-3 py-1 rounded-lg text-sm">+{{ stock.pc }}%</span>
-                </div>
+                <span class="bg-green-900 text-green-400 font-bold px-3 py-1 rounded-lg text-sm">+{{ stock.pc }}%</span>
             </div>
             {% endfor %}
         </div>
     </div>
-
-    <!-- TOP LOSERS -->
     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
         <h2 class="text-xl font-bold mb-4 text-red-400">📉 Top Losers</h2>
-        <div class="space-y-3">
+        <div class="space-y-2">
             {% for stock in losers %}
-            <div class="flex justify-between items-center bg-gray-800 hover:bg-gray-750 rounded-xl px-4 py-3 transition">
+            <div class="flex justify-between items-center bg-gray-800 rounded-xl px-4 py-3">
                 <div>
                     <p class="font-bold">{{ stock.s }}</p>
-                    <p class="text-gray-400 text-sm">Rs. {{ stock.lp }}</p>
+                    <p class="text-gray-400 text-xs">Rs.{{ stock.lp }} &nbsp;|&nbsp; Vol: {{ "{:,}".format(stock.q|int) }}</p>
                 </div>
-                <div class="text-right">
-                    <span class="bg-red-900 text-red-400 font-bold px-3 py-1 rounded-lg text-sm">{{ stock.pc }}%</span>
-                </div>
+                <span class="bg-red-900 text-red-400 font-bold px-3 py-1 rounded-lg text-sm">{{ stock.pc }}%</span>
             </div>
             {% endfor %}
         </div>
     </div>
-
 </div>
 
 <!-- HOLDINGS TABLE -->
-<div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 overflow-x-auto mb-8">
-    <div class="flex items-center justify-between mb-6">
+<div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-8 overflow-x-auto">
+    <div class="flex items-center justify-between mb-5">
         <h2 class="text-xl font-bold">Your Holdings</h2>
         <a href="/portfolio" class="text-red-500 hover:text-red-400 text-sm">Full Portfolio →</a>
     </div>
-
     {% if holdings %}
-    <table class="w-full min-w-[600px]">
+    <table class="w-full min-w-[750px] text-sm">
         <thead>
-            <tr class="text-left border-b border-gray-800 text-gray-400 text-sm">
+            <tr class="text-left border-b border-gray-700 text-gray-400">
                 <th class="pb-3">Symbol</th>
-                <th class="pb-3">Qty</th>
-                <th class="pb-3">Buy Price</th>
                 <th class="pb-3">LTP</th>
-                <th class="pb-3">Change</th>
-                <th class="pb-3">Invested</th>
-                <th class="pb-3">Value</th>
+                <th class="pb-3">Change%</th>
+                <th class="pb-3">Intraday</th>
+                <th class="pb-3">High/Low</th>
+                <th class="pb-3">Volume</th>
                 <th class="pb-3">P/L</th>
+                <th class="pb-3">P/L%</th>
             </tr>
         </thead>
         <tbody>
             {% for item in holdings %}
             <tr class="border-b border-gray-800 hover:bg-gray-800 transition">
-                <td class="py-3 font-bold text-white">{{ item.symbol }}</td>
-                <td class="py-3 text-gray-300">{{ item.qty }}</td>
-                <td class="py-3 text-gray-300">{{ "{:,.2f}".format(item.buy_price) }}</td>
+                <td class="py-3 font-bold">
+                    {{ item.symbol }}
+                    {% if item.volume_flag %}<span class="text-xs ml-1">{{ item.volume_flag }}</span>{% endif %}
+                </td>
                 <td class="py-3 font-semibold">{{ "{:,.2f}".format(item.ltp) }}</td>
-                <td class="py-3 {% if item.change >= 0 %}text-green-400{% else %}text-red-400{% endif %} font-semibold">
+                <td class="py-3 font-semibold {% if item.change >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
                     {% if item.change >= 0 %}+{% endif %}{{ item.change }}%
                 </td>
-                <td class="py-3 text-gray-300">{{ "{:,.0f}".format(item.invested) }}</td>
-                <td class="py-3 text-gray-300">{{ "{:,.0f}".format(item.current) }}</td>
+                <td class="py-3 text-xs {% if item.intraday_chg >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                    {% if item.intraday_chg >= 0 %}▲{% else %}▼{% endif %} {{ item.intraday_chg }}%
+                </td>
+                <td class="py-3 text-xs text-gray-400">
+                    <span class="text-green-400">{{ "{:,.0f}".format(item.high) }}</span> /
+                    <span class="text-red-400">{{ "{:,.0f}".format(item.low) }}</span>
+                </td>
+                <td class="py-3 text-gray-300 text-xs">{{ "{:,}".format(item.volume) }}</td>
                 <td class="py-3 font-bold {% if item.pnl >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
                     {% if item.pnl >= 0 %}+{% endif %}{{ "{:,.0f}".format(item.pnl) }}
-                    <span class="text-xs ml-1">({{ "{:.1f}".format(item.pnl_percent) }}%)</span>
+                </td>
+                <td class="py-3 {% if item.pnl_pct >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                    {{ "{:.1f}".format(item.pnl_pct) }}%
                 </td>
             </tr>
             {% endfor %}
@@ -156,51 +187,50 @@
     </table>
     {% else %}
     <div class="text-center py-16">
-        <p class="text-6xl mb-4">📊</p>
+        <p class="text-5xl mb-4">📊</p>
         <p class="text-xl font-semibold mb-2">Portfolio खाली छ!</p>
         <p class="text-gray-400 mb-6">आफ्नो पहिलो stock थप्नुहोस्।</p>
-        <a href="/portfolio" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-xl font-semibold transition">+ Stock थप्नुहोस्</a>
+        <a href="/portfolio" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-xl font-semibold">+ Stock थप्नुहोस्</a>
     </div>
     {% endif %}
 </div>
 
-<!-- TELEGRAM BANNER (if not connected) -->
+<!-- TELEGRAM BANNER -->
 {% if not user.telegram_chat_id %}
-<div class="bg-blue-900 border border-blue-700 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+<div class="bg-blue-900 border border-blue-700 rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
     <div>
-        <h3 class="text-lg font-bold">📱 Telegram Alert सेटअप गर्नुहोस्!</h3>
-        <p class="text-blue-300 text-sm mt-1">दैनिक ४ बजे portfolio alert पाउनुहोस् - @NepseNitiBot मा /start गर्नुहोस्</p>
+        <h3 class="font-bold">📱 Telegram Alert सेटअप गर्नुहोस्!</h3>
+        <p class="text-blue-300 text-sm mt-1">दैनिक ४ बजे portfolio alert — @NepseNitiBot मा /start गर्नुहोस्</p>
     </div>
-    <a href="/notifications" class="bg-blue-600 hover:bg-blue-700 px-6 py-2.5 rounded-xl font-semibold transition whitespace-nowrap">Setup गर्नुहोस्</a>
+    <a href="/notifications" class="bg-blue-600 hover:bg-blue-700 px-5 py-2.5 rounded-xl font-semibold transition whitespace-nowrap">Setup →</a>
 </div>
 {% endif %}
 
 <!-- CHART.JS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Live time
+// Live NST clock
 function updateTime() {
     const now = new Date();
     const nst = new Date(now.getTime() + (5*60 + 45)*60*1000);
-    document.getElementById('live-time').textContent =
-        nst.toUTCString().replace('GMT', 'NST').slice(0, -4);
+    const opts = { weekday:'short', year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' };
+    document.getElementById('live-time').textContent = nst.toLocaleDateString('en-NP', opts) + ' NST';
 }
-updateTime();
-setInterval(updateTime, 1000);
+updateTime(); setInterval(updateTime, 1000);
 
 {% if holdings %}
-// P/L BAR CHART
+const colors = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#14b8a6'];
+
+// P/L Bar Chart
 const plCtx = document.getElementById('plChart').getContext('2d');
 new Chart(plCtx, {
     type: 'bar',
     data: {
-        labels: [{% for item in holdings %}'{{ item.symbol }}',{% endfor %}],
+        labels: [{% for h in holdings %}'{{ h.symbol }}',{% endfor %}],
         datasets: [{
             label: 'P/L (Rs.)',
-            data: [{% for item in holdings %}{{ "{:.0f}".format(item.pnl) }},{% endfor %}],
-            backgroundColor: [{% for item in holdings %}
-                '{{ "rgba(74,222,128,0.8)" if item.pnl >= 0 else "rgba(248,113,113,0.8)" }}',
-            {% endfor %}],
+            data: [{% for h in holdings %}{{ "{:.0f}".format(h.pnl) }},{% endfor %}],
+            backgroundColor: [{% for h in holdings %}'{{ "rgba(74,222,128,0.8)" if h.pnl >= 0 else "rgba(248,113,113,0.8)" }}',{% endfor %}],
             borderRadius: 8,
         }]
     },
@@ -208,33 +238,28 @@ new Chart(plCtx, {
         responsive: true,
         plugins: { legend: { display: false } },
         scales: {
-            x: { ticks: { color: '#9ca3af' }, grid: { color: '#1f2937' } },
-            y: { ticks: { color: '#9ca3af' }, grid: { color: '#1f2937' } }
+            x: { ticks: { color:'#9ca3af' }, grid: { color:'#1f2937' } },
+            y: { ticks: { color:'#9ca3af' }, grid: { color:'#1f2937' } }
         }
     }
 });
 
-// ALLOCATION PIE CHART
+// Allocation Doughnut
 const allocCtx = document.getElementById('allocChart').getContext('2d');
-const colors = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f59e0b','#6366f1'];
 new Chart(allocCtx, {
     type: 'doughnut',
     data: {
-        labels: [{% for item in holdings %}'{{ item.symbol }}',{% endfor %}],
+        labels: [{% for h in holdings %}'{{ h.symbol }}',{% endfor %}],
         datasets: [{
-            data: [{% for item in holdings %}{{ "{:.0f}".format(item.current) }},{% endfor %}],
+            data: [{% for h in holdings %}{{ "{:.0f}".format(h.current) }},{% endfor %}],
             backgroundColor: colors.slice(0, {{ holdings|length }}),
-            borderColor: '#111827',
-            borderWidth: 3,
+            borderColor: '#111827', borderWidth: 3,
         }]
     },
     options: {
         responsive: true,
         plugins: {
-            legend: {
-                position: 'right',
-                labels: { color: '#9ca3af', padding: 12, font: { size: 12 } }
-            }
+            legend: { position:'right', labels: { color:'#9ca3af', padding:10, font:{ size:11 } } }
         }
     }
 });
