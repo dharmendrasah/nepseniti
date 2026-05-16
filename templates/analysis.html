@@ -1,132 +1,102 @@
 
+
 {% extends "base.html" %}
 
 {% block content %}
 
 <!-- HEADER -->
-<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-10">
-
+<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
     <div>
-
-        <h1 class="text-4xl font-bold">
-            AI Portfolio Analysis
-        </h1>
-
-        <p class="text-gray-400 mt-2">
-            नेपाली भाषामा AI आधारित विश्लेषण
-        </p>
-
+        <h1 class="text-4xl font-bold">🤖 AI Portfolio Analysis</h1>
+        <p class="text-gray-400 mt-1">Smart stock recommendations in Nepali</p>
     </div>
-
-    <div class="mt-6 md:mt-0">
-
-        <a href="/analysis"
-           class="bg-red-600 hover:bg-red-700 px-5 py-3 rounded-xl font-semibold">
-
-            Regenerate Analysis
-
+    <div class="mt-4 md:mt-0 flex gap-3">
+        <a href="/analysis" class="bg-red-600 hover:bg-red-700 px-5 py-2.5 rounded-xl font-semibold transition">
+            🔄 Regenerate
         </a>
-
     </div>
-
 </div>
 
-<!-- AI ANALYSIS CARD -->
-<div class="bg-gray-900 border border-gray-800 rounded-3xl p-8">
-
-    <!-- TOP BAR -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-
-        <div>
-
-            <h2 class="text-2xl font-bold mb-2">
-                NepseNiti AI Insight
-            </h2>
-
-            <p class="text-gray-400">
-                AI-generated portfolio analysis
-            </p>
-
-        </div>
-
-        <div class="mt-4 md:mt-0 text-sm text-gray-500">
-
-            Generated:
-            {{ timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
-
-        </div>
-
-    </div>
-
-    <!-- AI OUTPUT -->
-    <div class="bg-gray-950 border border-gray-800 rounded-2xl p-6">
-
-        <div class="prose prose-invert max-w-none">
-
-            <div class="whitespace-pre-wrap text-gray-200 leading-relaxed text-lg">
-{{ ai_text }}
+<!-- QUICK SIGNALS (per stock cards) -->
+{% if portfolio_data %}
+<div class="mb-8">
+    <h2 class="text-xl font-bold mb-4">⚡ Quick Signals</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {% for item in portfolio_data %}
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4">
+            <div class="flex justify-between items-start mb-2">
+                <span class="font-bold text-lg">{{ item.symbol }}</span>
+                <span class="text-xs bg-gray-800 px-2 py-1 rounded-lg text-gray-400">{{ item.sector }}</span>
             </div>
-
+            <div class="text-sm font-bold mb-1
+                {% if 'SELL' in item.signal %}text-red-400
+                {% elif 'HOLD' in item.signal %}text-yellow-400
+                {% elif 'REVIEW' in item.signal %}text-orange-400
+                {% else %}text-blue-400{% endif %}">
+                {{ item.signal }}
+            </div>
+            <div class="text-xs text-gray-400">{{ item.signal_reason }}</div>
+            <div class="mt-2 text-xs font-semibold
+                {% if item.pnl >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                {% if item.pnl >= 0 %}+{% endif %}{{ "{:.1f}".format(item.pnl_pct) }}%
+                (Rs.{{ "{:,.0f}".format(item.pnl) }})
+            </div>
         </div>
-
+        {% endfor %}
     </div>
-
 </div>
 
-<!-- INFO SECTION -->
-<div class="grid md:grid-cols-3 gap-6 mt-10">
-
-    <!-- CARD 1 -->
-    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-
-        <div class="text-4xl mb-4">
-            📊
-        </div>
-
-        <h3 class="text-xl font-bold mb-3">
-            Smart Analysis
-        </h3>
-
-        <p class="text-gray-400 leading-relaxed">
-            AI analyzes your NEPSE portfolio and gives personalized investment insights in Nepali language.
+<!-- PORTFOLIO SUMMARY BAR -->
+<div class="grid grid-cols-3 gap-4 mb-8">
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 text-center">
+        <p class="text-gray-400 text-sm">Invested</p>
+        <p class="font-bold text-lg">Rs.{{ "{:,.0f}".format(total_invested) }}</p>
+    </div>
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 text-center">
+        <p class="text-gray-400 text-sm">Current Value</p>
+        <p class="font-bold text-lg">Rs.{{ "{:,.0f}".format(total_current) }}</p>
+    </div>
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 text-center">
+        <p class="text-gray-400 text-sm">Total P/L</p>
+        <p class="font-bold text-lg {% if total_pnl >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+            {% if total_pnl >= 0 %}+{% endif %}Rs.{{ "{:,.0f}".format(total_pnl) }}
+            ({{ "{:.1f}".format(total_pnl_pct) }}%)
         </p>
+    </div>
+</div>
+{% endif %}
 
+<!-- AI ANALYSIS OUTPUT -->
+<div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
+    <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-xl">🤖</div>
+        <div>
+            <h2 class="text-xl font-bold">AI विश्लेषण</h2>
+            <p class="text-gray-400 text-sm">{{ timestamp.strftime("%Y-%m-%d %I:%M %p") }} NST</p>
+        </div>
     </div>
 
-    <!-- CARD 2 -->
-    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-
-        <div class="text-4xl mb-4">
-            ⚡
-        </div>
-
-        <h3 class="text-xl font-bold mb-3">
-            Instant Results
-        </h3>
-
-        <p class="text-gray-400 leading-relaxed">
-            Get professional-style market analysis instantly using advanced Llama AI models.
-        </p>
-
+    <!-- RENDER AI TEXT WITH FORMATTING -->
+    <div class="prose prose-invert max-w-none text-gray-200 leading-relaxed space-y-3" id="ai-output">
+        {% set lines = ai_text.split('\n') %}
+        {% for line in lines %}
+            {% if line.startswith('**') and line.endswith('**') %}
+                <h3 class="text-white font-bold text-lg mt-4 mb-2">{{ line.replace('**','') }}</h3>
+            {% elif line.startswith('•') or line.startswith('-') or line.startswith('*') %}
+                <p class="flex gap-2"><span class="text-red-400 flex-shrink-0">▸</span><span>{{ line[1:].strip() }}</span></p>
+            {% elif line.strip() == '' %}
+                <div class="h-2"></div>
+            {% else %}
+                <p>{{ line }}</p>
+            {% endif %}
+        {% endfor %}
     </div>
+</div>
 
-    <!-- CARD 3 -->
-    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-
-        <div class="text-4xl mb-4">
-            🇳🇵
-        </div>
-
-        <h3 class="text-xl font-bold mb-3">
-            Nepali Language
-        </h3>
-
-        <p class="text-gray-400 leading-relaxed">
-            Analysis is generated completely in Nepali for better understanding by local investors.
-        </p>
-
-    </div>
-
+<!-- DISCLAIMER -->
+<div class="bg-yellow-900 border border-yellow-700 rounded-2xl p-4 text-sm text-yellow-300">
+    ⚠️ <strong>Disclaimer:</strong> यो AI analysis शैक्षिक उद्देश्यका लागि मात्र हो। शेयर किनबेच गर्नु अघि आफ्नो broker वा financial advisor सँग परामर्श गर्नुहोस्।
 </div>
 
 {% endblock %}
+
