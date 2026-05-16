@@ -43,6 +43,129 @@ headers = {
 
 client = Groq(api_key=GROQ_API_KEY)
 
+SECTOR_MAP = {
+    # Commercial Banks
+    "NABIL":"Commercial Banks","NBL":"Commercial Banks","NICA":"Commercial Banks",
+    "EBL":"Commercial Banks","SBI":"Commercial Banks","SANIMA":"Commercial Banks",
+    "MBL":"Commercial Banks","CBL":"Commercial Banks","PRVU":"Commercial Banks",
+    "KBL":"Commercial Banks","SRBL":"Commercial Banks","GBIME":"Commercial Banks",
+    "HBL":"Commercial Banks","NIMB":"Commercial Banks","NMB":"Commercial Banks",
+    "PCBL":"Commercial Banks","SBL":"Commercial Banks","ADBL":"Commercial Banks",
+    "CZBIL":"Commercial Banks","LSL":"Commercial Banks","BOKL":"Commercial Banks",
+    "MEGA":"Commercial Banks","CCBL":"Commercial Banks","JBNL":"Commercial Banks",
+    "NABBC":"Commercial Banks","RBB":"Commercial Banks","NBB":"Commercial Banks",
+    "SCB":"Commercial Banks","NIBL":"Commercial Banks","LBBL":"Commercial Banks",
+    "GBBL":"Commercial Banks","NIC":"Commercial Banks","CITY":"Commercial Banks",
+
+    # Development Banks
+    "CORBL":"Development Bank Limited","SAPDBL":"Development Bank Limited",
+    "KSBBL":"Development Bank Limited","SHINE":"Development Bank Limited",
+    "SINDU":"Development Bank Limited","SADBL":"Development Bank Limited",
+    "EDBL":"Development Bank Limited","MNBBL":"Development Bank Limited",
+    "MLBL":"Development Bank Limited","GRDBL":"Development Bank Limited",
+    "SBBL":"Development Bank Limited","NWCL":"Development Bank Limited",
+    "JBBL":"Development Bank Limited","LBBL":"Development Bank Limited",
+    "KRBL":"Development Bank Limited","CEDB":"Development Bank Limited",
+    "DALB":"Development Bank Limited","GBBL":"Development Bank Limited",
+
+    # Finance
+    "HFIN":"Finance","SIFC":"Finance","UFL":"Finance","GFCL":"Finance",
+    "MFIL":"Finance","PFL":"Finance","ICFC":"Finance","CFCL":"Finance",
+    "RLFL":"Finance","JFL":"Finance","SFCL":"Finance","BESTL":"Finance",
+    "GUFL":"Finance","MPFL":"Finance","BFC":"Finance","PROFL":"Finance",
+    "NFS":"Finance","CITY":"Finance","GMFIL":"Finance","CLI":"Finance",
+
+    # Microfinance
+    "FMDBL":"Microfinance","ILBS":"Microfinance","CBBL":"Microfinance",
+    "MLBSL":"Microfinance","SWBBL":"Microfinance","DDBL":"Microfinance",
+    "SKBBL":"Microfinance","SMFBS":"Microfinance","NESDO":"Microfinance",
+    "NICLBSL":"Microfinance","KMCDB":"Microfinance","MERO":"Microfinance",
+    "NCLBSL":"Microfinance","VLBS":"Microfinance","HLBSL":"Microfinance",
+    "SLBBL":"Microfinance","JBLB":"Microfinance","SBBL":"Microfinance",
+    "UNLB":"Microfinance","SHLB":"Microfinance","WNLB":"Microfinance",
+    "NMBMF":"Microfinance","GMFBS":"Microfinance","MLBBL":"Microfinance",
+    "SWMF":"Microfinance","SLBSL":"Microfinance","ACLBSL":"Microfinance",
+    "USLB":"Microfinance","DLBS":"Microfinance","LLBS":"Microfinance",
+    "GLBSL":"Microfinance","ALBSL":"Microfinance","GILB":"Microfinance",
+    "MSLB":"Microfinance","GBLBS":"Microfinance","NMFBS":"Microfinance",
+    "SMHL":"Microfinance","SABBL":"Microfinance","KKHC":"Microfinance",
+    "ULBSL":"Microfinance","NMLBBL":"Microfinance","NUBL":"Microfinance",
+
+    # Hydropower
+    "NHDL":"Hydro Power","NHPC":"Hydro Power","UPPER":"Hydro Power",
+    "RIDI":"Hydro Power","AKPL":"Hydro Power","RHPC":"Hydro Power",
+    "RADHI":"Hydro Power","SHL":"Hydro Power","UHEWA":"Hydro Power",
+    "MAKAR":"Hydro Power","KPCL":"Hydro Power","HPPL":"Hydro Power",
+    "PMHPL":"Hydro Power","BPCL":"Hydro Power","GHL":"Hydro Power",
+    "API":"Hydro Power","NYADI":"Hydro Power","DHPL":"Hydro Power",
+    "DOLTI":"Hydro Power","RKPCL":"Hydro Power","AKJCL":"Hydro Power",
+    "CHCL":"Hydro Power","HIDCL":"Hydro Power","HIDCLP":"Hydro Power",
+    "SSHL":"Hydro Power","BHL":"Hydro Power","HDHPC":"Hydro Power",
+    "AHPC":"Hydro Power","SHPC":"Hydro Power","BARUN":"Hydro Power",
+    "SJCL":"Hydro Power","HURJA":"Hydro Power","RFPL":"Hydro Power",
+    "DORDI":"Hydro Power","LEC":"Hydro Power","HHL":"Hydro Power",
+    "MBJC":"Hydro Power","SPDL":"Hydro Power","TAMOR":"Hydro Power",
+    "RLEL":"Hydro Power","TPC":"Hydro Power","UMHL":"Hydro Power",
+    "RHGCL":"Hydro Power","GLH":"Hydro Power","BJHL":"Hydro Power",
+    "EHPL":"Hydro Power","DHEL":"Hydro Power","SHEL":"Hydro Power",
+    "HEI":"Hydro Power","USHEC":"Hydro Power","PMLI":"Hydro Power",
+    "PHCL":"Hydro Power","MEHL":"Hydro Power","MHCL":"Hydro Power",
+    "MHL":"Hydro Power","MCHL":"Hydro Power","UMRH":"Hydro Power",
+    "MKHL":"Hydro Power","SPHL":"Hydro Power","BHPL":"Hydro Power",
+    "BHDC":"Hydro Power","BEDC":"Hydro Power","RURU":"Hydro Power",
+    "GVL":"Hydro Power","SGHC":"Hydro Power","BNHC":"Hydro Power",
+    "MHNL":"Hydro Power","CKHL":"Hydro Power","SKHL":"Hydro Power",
+    "SKHEL":"Hydro Power","NHDL":"Hydro Power","TSHL":"Hydro Power",
+    "USHL":"Hydro Power","MSHL":"Hydro Power","SMH":"Hydro Power",
+    "AVYAN":"Hydro Power","ULHC":"Hydro Power","SOHL":"Hydro Power",
+    "SHIVM":"Hydro Power","SMJC":"Hydro Power","SAIL":"Hydro Power",
+    "HDL":"Hydro Power","IHL":"Hydro Power","UPCL":"Hydro Power",
+    "PPL":"Hydro Power","BHCL":"Hydro Power","FOWAD":"Hydro Power",
+    "MKCL":"Hydro Power","MAKAR":"Hydro Power","SIKLES":"Hydro Power",
+    "KPCL":"Hydro Power","CGH":"Hydro Power","SAHAS":"Hydro Power",
+    "NGPL":"Hydro Power","MANDU":"Hydro Power","VLUCL":"Hydro Power",
+    "KDL":"Hydro Power","RLEL":"Hydro Power","SMPDA":"Hydro Power",
+    "MKJC":"Hydro Power","MMKJL":"Hydro Power","BGWT":"Hydro Power",
+    "HRL":"Hydro Power","BUNGAL":"Hydro Power","MEL":"Hydro Power",
+
+    # Life Insurance
+    "NLIC":"Life Insurance","LICN":"Life Insurance","ALICL":"Life Insurance",
+    "SLICL":"Life Insurance","SJLIC":"Life Insurance","NLICL":"Life Insurance",
+    "SNLI":"Life Insurance","ILI":"Life Insurance","PMLI":"Life Insurance",
+    "CLI":"Life Insurance","GILB":"Life Insurance","SRLI":"Life Insurance",
+    "NMIC":"Life Insurance","JOSHI":"Life Insurance","AHL":"Life Insurance",
+    "HLI":"Life Insurance","MABEL":"Life Insurance","UAIL":"Life Insurance",
+
+    # Non-Life Insurance
+    "NICL":"Non-Life Insurance","PICL":"Non-Life Insurance","SICL":"Non-Life Insurance",
+    "HGICL":"Non-Life Insurance","RBCL":"Non-Life Insurance","SGIC":"Non-Life Insurance",
+    "SPICL":"Non-Life Insurance","PRIN":"Non-Life Insurance","AIL":"Non-Life Insurance",
+    "NLG":"Non-Life Insurance","IGI":"Non-Life Insurance","GCIL":"Non-Life Insurance",
+    "NRIC":"Non-Life Insurance","SALICO":"Non-Life Insurance","NIL":"Non-Life Insurance",
+    "PPCL":"Non-Life Insurance","SANVI":"Non-Life Insurance","SPIL":"Non-Life Insurance",
+    "SPC":"Non-Life Insurance","MDB":"Non-Life Insurance","RNLI":"Non-Life Insurance",
+    "ALICL":"Non-Life Insurance",
+
+    # Investment
+    "CIT":"Investment","NIFRA":"Investment","ENL":"Investment",
+    "HIDCL":"Investment","SMB":"Investment",
+
+    # Hotels & Tourism
+    "OHL":"Hotels And Tourism","TRH":"Hotels And Tourism","KDL":"Hotels And Tourism",
+    "NRN":"Hotels And Tourism","CHDC":"Hotels And Tourism","CITY":"Hotels And Tourism",
+    "CGH":"Hotels And Tourism",
+
+    # Manufacturing
+    "NTC":"Manufacturing And Processing","UNL":"Manufacturing And Processing",
+    "BBC":"Manufacturing And Processing","BNT":"Manufacturing And Processing",
+    "RSML":"Manufacturing And Processing","STC":"Manufacturing And Processing",
+    "TTL":"Manufacturing And Tourism","OMPL":"Manufacturing And Processing",
+    "SBID2090":"Manufacturing And Processing",
+
+    # Tradings
+    "SHL":"Tradings","SMB":"Tradings",
+}
+
 # ============================================
 # TELEGRAM BOT STATE (in-memory)
 # Tracks users mid-conversation waiting to send email
@@ -83,55 +206,6 @@ def get_stock_price(symbol):
                 "volume": stock.get("q", 0)
             }
     return {"ltp": 0, "change": 0}
-
-
-def get_stock_detail(symbol):
-    """Fetch sector, 52w high/low, EPS, PE, book value from Merolagani"""
-    try:
-        url = f"https://merolagani.com/CompanyDetail.aspx?symbol={symbol.upper()}"
-        headers_ml = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(url, headers=headers_ml, timeout=15)
-        html = response.text
-
-        import re
-
-        def extract(pattern, default="N/A"):
-            m = re.search(pattern, html, re.IGNORECASE | re.DOTALL)
-            return m.group(1).strip() if m else default
-
-        sector   = extract(r'<td[^>]*>\s*Sector\s*</td>\s*<td[^>]*>\s*([^<]+)')
-        high_low = extract(r'52 Weeks High - Low\s*</td>\s*<td[^>]*>\s*([^<]+)')
-        eps      = extract(r'>EPS\s*</td>\s*<td[^>]*>\s*([^<(]+)')
-        pe       = extract(r'P/E Ratio\s*</td>\s*<td[^>]*>\s*([^<]+)')
-        book_val = extract(r'Book Value\s*</td>\s*<td[^>]*>\s*([^<]+)')
-        avg_180  = extract(r'180 Day Average\s*</td>\s*<td[^>]*>\s*([^<]+)')
-
-        # parse 52w high and low
-        week52_high = week52_low = 0
-        if high_low != "N/A" and "-" in high_low:
-            parts = high_low.replace(",","").split("-")
-            try:
-                week52_high = float(parts[0].strip())
-                week52_low  = float(parts[1].strip())
-            except:
-                pass
-
-        return {
-            "sector":      sector,
-            "week52_high": week52_high,
-            "week52_low":  week52_low,
-            "eps":         eps.replace(",","").strip(),
-            "pe":          pe.replace(",","").strip(),
-            "book_value":  book_val.replace(",","").strip(),
-            "avg_180":     avg_180.replace(",","").strip(),
-        }
-    except Exception as e:
-        print(f"Detail fetch error for {symbol}: {e}")
-        return {
-            "sector": "Unknown", "week52_high": 0, "week52_low": 0,
-            "eps": "N/A", "pe": "N/A", "book_value": "N/A", "avg_180": "N/A"
-        }
-
 
 # ============================================
 # SEND TELEGRAM MESSAGE
@@ -672,197 +746,54 @@ def delete_stock(stock_id):
 # AI ANALYSIS
 # ============================================
 
-
 @app.route("/analysis")
 def analysis():
     if "user" not in session:
         return redirect("/login")
 
-    user   = session["user"]
-    email  = user["email"]
+    user = session["user"]
+    email = user["email"]
 
-    url      = f"{SUPABASE_URL}/rest/v1/portfolios?user_name=eq.{email}"
+    url = f"{SUPABASE_URL}/rest/v1/portfolios?user_name=eq.{email}"
     response = requests.get(url, headers=headers)
     portfolio = response.json()
 
-    if not portfolio:
-        return render_template("analysis.html",
-            ai_text="Portfolio खाली छ। पहिले stocks थप्नुहोस्।",
-            timestamp=datetime.now(), portfolio_data=[],
-            total_invested=0, total_current=0, total_pnl=0, total_pnl_pct=0)
-
-    portfolio_data = []
-    sector_summary = {}
-    total_invested = 0
-    total_current  = 0
-
+    portfolio_text = ""
     for item in portfolio:
-        symbol    = item["symbol"]
-        qty       = item["quantity"]
+        symbol = item["symbol"]
+        qty = item["quantity"]
         buy_price = item["buy_price"]
-
-        # live price
-        stock  = get_stock_price(symbol)
-        ltp    = stock["ltp"] if stock["ltp"] > 0 else buy_price
-        change = stock["change"]
-
-        # rich detail from merolagani
-        detail      = get_stock_detail(symbol)
-        sector      = detail["sector"] if detail["sector"] != "N/A" else "Other"
-        week52_high = detail["week52_high"]
-        week52_low  = detail["week52_low"]
-        eps         = detail["eps"]
-        pe          = detail["pe"]
-        book_value  = detail["book_value"]
-        avg_180     = detail["avg_180"]
-
-        invested = qty * buy_price
-        current  = qty * ltp
-        pnl      = current - invested
-        pnl_pct  = (pnl / invested * 100) if invested > 0 else 0
-
-        total_invested += invested
-        total_current  += current
-
-        # 52-week position
-        if week52_high > 0 and week52_low > 0:
-            range_pct = week52_high - week52_low
-            pos_pct   = ((ltp - week52_low) / range_pct * 100) if range_pct > 0 else 50
-            if pos_pct >= 80:
-                week52_note = f"५२ हप्ताको उच्च नजिक ({round(pos_pct,0)}%)"
-            elif pos_pct <= 25:
-                week52_note = f"५२ हप्ताको न्यून नजिक ({round(pos_pct,0)}%)"
-            else:
-                week52_note = f"५२ हप्ताको बीचमा ({round(pos_pct,0)}%)"
-        else:
-            week52_note = "N/A"
-
-        # signal logic
-        if pnl_pct >= 20:
-            signal        = "SELL ✅"
-            signal_reason = "२०%+ नाफा — आंशिक मुनाफा लिनुहोस्"
-        elif pnl_pct <= -20:
-            signal        = "REVIEW ⚠️"
-            signal_reason = "२०%+ घाटा — कारण बुझ्नुहोस्"
-        elif pnl_pct <= -10 and change < 0:
-            signal        = "WATCH 👁️"
-            signal_reason = "घाटामा छ र आज पनि घटेको छ"
-        elif week52_high > 0 and ltp >= week52_high * 0.95:
-            signal        = "SELL/HOLD 🟠"
-            signal_reason = "५२ हप्ताको उच्चमा — बेच्ने विचार गर्नुहोस्"
-        elif week52_low > 0 and ltp <= week52_low * 1.05:
-            signal        = "BUY/HOLD 🟢"
-            signal_reason = "५२ हप्ताको न्यूनमा — थप्ने अवसर हुन सक्छ"
-        elif change >= 3:
-            signal        = "HOLD 🟡"
-            signal_reason = "आज राम्रो गति छ"
-        else:
-            signal        = "HOLD 🟡"
-            signal_reason = "सामान्य अवस्थामा छ"
-
-        if sector not in sector_summary:
-            sector_summary[sector] = {"invested": 0, "current": 0, "stocks": []}
-        sector_summary[sector]["invested"] += invested
-        sector_summary[sector]["current"]  += current
-        sector_summary[sector]["stocks"].append(symbol)
-
-        portfolio_data.append({
-            "symbol":       symbol,
-            "qty":          qty,
-            "buy_price":    buy_price,
-            "ltp":          ltp,
-            "change":       change,
-            "invested":     invested,
-            "current":      current,
-            "pnl":          pnl,
-            "pnl_pct":      pnl_pct,
-            "sector":       sector,
-            "week52_high":  week52_high,
-            "week52_low":   week52_low,
-            "week52_note":  week52_note,
-            "eps":          eps,
-            "pe":           pe,
-            "book_value":   book_value,
-            "signal":       signal,
-            "signal_reason": signal_reason,
-        })
-
-    total_pnl     = total_current - total_invested
-    total_pnl_pct = (total_pnl / total_invested * 100) if total_invested > 0 else 0
-
-    # sector text
-    sector_text = ""
-    for sec, data in sector_summary.items():
-        sec_pnl = data["current"] - data["invested"]
-        sec_pct = (sec_pnl / data["invested"] * 100) if data["invested"] > 0 else 0
-        sector_text += f"- {sec}: {', '.join(data['stocks'])} → Rs.{round(sec_pnl,0)} ({round(sec_pct,1)}%)\n"
-
-    # per-stock text for AI
-    stock_text = ""
-    for p in portfolio_data:
-        stock_text += (
-            f"• {p['symbol']} ({p['sector']}): {p['qty']} कित्ता, "
-            f"खरिद Rs.{p['buy_price']}, LTP Rs.{p['ltp']}, "
-            f"आज {p['change']}%, नाफा/घाटा Rs.{round(p['pnl'],0)} ({round(p['pnl_pct'],1)}%), "
-            f"५२ हप्ता High Rs.{p['week52_high']} / Low Rs.{p['week52_low']}, "
-            f"अवस्था: {p['week52_note']}, "
-            f"EPS: {p['eps']}, PE: {p['pe']}, Book Value: {p['book_value']}, "
-            f"Signal: {p['signal']}\n"
+        stock = get_stock_price(symbol)
+        ltp = stock["ltp"]
+        portfolio_text += (
+            f"Stock: {symbol}, Qty: {qty}, Buy Price: {buy_price}, LTP: {ltp}\n"
         )
 
-    prompt = f"""तपाईं नेपाल शेयर बजारका एक अनुभवी र विश्वसनीय विश्लेषक हुनुहुन्छ।
-तपाईंसँग प्रत्येक स्टकको sector, ५२ हप्ताको high/low, EPS, PE ratio, र book value जस्ता real data छ।
-यो data प्रयोग गरेर smart र specific analysis नेपाली भाषामा दिनुहोस्।
+    prompt = f"""तपाईं एक अनुभवी नेपाली शेयर बजार विश्लेषक हुनुहुन्छ।
 
-===== Portfolio Data =====
-{stock_text}
+तलको पोर्टफोलियोको नेपाली भाषामा विश्लेषण गर्नुहोस्।
 
-===== Sector Summary =====
-{sector_text}
+{portfolio_text}
 
-===== कुल अवस्था =====
-कुल लगानी: Rs.{round(total_invested,0)}
-हालको मूल्य: Rs.{round(total_current,0)}
-कुल नाफा/घाटा: Rs.{round(total_pnl,0)} ({round(total_pnl_pct,1)}%)
+विश्लेषणमा:
+- जोखिम
+- राम्रो पक्ष
+- कमजोर पक्ष
+- दीर्घकालीन सुझाव
+- छोटो निष्कर्ष
 
-===== तपाईंको काम =====
-तलका ३ भागमा नेपाली भाषामा analysis दिनुहोस्:
-
-**१. प्रत्येक Stock को निर्णय:**
-प्रत्येक stock को लागि एउटा line मा:
-[SYMBOL] → [राख्नुहोस् / बेच्नुहोस् / थप किन्नुहोस् / हेर्नुहोस्] — [PE, EPS, ५२ हप्ता position, sector को आधारमा specific कारण]
-
-**२. Sector Analysis:**
-कुन sector मा कति exposure छ र अहिले कुन sector राम्रो/कमजोर छ — specific reasons सहित।
-
-**३. Overall Strategy:**
-३-४ वटा concrete, actionable steps — stock names र numbers प्रयोग गरेर।
-
-Generic कुरा नलेख्नुहोस्। Real data को आधारमा specific Nepali guidance दिनुहोस्।"""
+सबै कुरा नेपाली भाषामा लेख्नुहोस्।"""
 
     try:
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=1500,
-            temperature=0.7,
+            messages=[{"role": "user", "content": prompt}]
         )
         ai_text = completion.choices[0].message.content
     except Exception as e:
         ai_text = f"AI analysis failed: {str(e)}"
 
-    return render_template(
-        "analysis.html",
-        ai_text=ai_text,
-        timestamp=datetime.now(),
-        portfolio_data=portfolio_data,
-        total_invested=total_invested,
-        total_current=total_current,
-        total_pnl=total_pnl,
-        total_pnl_pct=total_pnl_pct,
-    )
-
-
+    return render_template("analysis.html", ai_text=ai_text, timestamp=datetime.now())
 
 # ============================================
 # NOTIFICATIONS
