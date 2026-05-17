@@ -1,0 +1,123 @@
+
+
+{% extends "base.html" %}
+{% block content %}
+
+<!-- HEADER -->
+<div class="text-center mb-12">
+    <h1 class="text-5xl font-bold mb-4">NepseNiti Premium 🇳🇵</h1>
+    <p class="text-xl text-gray-400">NEPSE investors को लागि सबैभन्दा smart portfolio tracker</p>
+</div>
+
+<!-- PRICING CARD -->
+<div class="max-w-lg mx-auto">
+    <div class="bg-gray-900 border-2 border-red-600 rounded-3xl p-8 relative">
+
+        <!-- BADGE -->
+        <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+            <span class="bg-red-600 text-white px-6 py-1.5 rounded-full text-sm font-bold">सबैभन्दा लोकप्रिय</span>
+        </div>
+
+        <div class="text-center mb-8">
+            <p class="text-gray-400 mb-2">Monthly Plan</p>
+            <div class="flex items-end justify-center gap-2">
+                <span class="text-6xl font-bold">299</span>
+                <div class="text-left mb-2">
+                    <p class="text-xl font-bold">NPR</p>
+                    <p class="text-gray-400 text-sm">/महिना</p>
+                </div>
+            </div>
+            <p class="text-gray-400 mt-2 text-sm">प्रतिदिन Rs.10 भन्दा कम!</p>
+        </div>
+
+        <!-- FEATURES -->
+        <div class="space-y-4 mb-8">
+            <div class="flex items-center gap-3">
+                <span class="text-green-400 text-xl">✅</span>
+                <span>Live NEPSE portfolio tracking</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-green-400 text-xl">✅</span>
+                <span>दैनिक <strong>४ बजे NST</strong> Telegram alert</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-green-400 text-xl">✅</span>
+                <span>AI portfolio analysis <strong>नेपाली भाषामा</strong></span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-green-400 text-xl">✅</span>
+                <span>Sector heat map + Market overview</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-green-400 text-xl">✅</span>
+                <span>साप्ताहिक बजार सारांश <strong>शुक्रबार ६ बजे</strong></span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-green-400 text-xl">✅</span>
+                <span>Top gainers/losers daily</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-green-400 text-xl">✅</span>
+                <span>Per stock Buy/Hold/Sell signal</span>
+            </div>
+        </div>
+
+        <!-- ESEWA PAYMENT -->
+        <div class="bg-gray-800 rounded-2xl p-6 mb-6">
+            <h3 class="font-bold text-lg mb-4 text-center">💚 eSewa बाट भुक्तानी गर्नुहोस्</h3>
+
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between items-center bg-gray-700 rounded-xl px-4 py-3">
+                    <span class="text-gray-400">eSewa नम्बर</span>
+                    <span class="font-bold text-green-400 text-lg" id="esewa-number">9843589759</span>
+                </div>
+                <div class="flex justify-between items-center bg-gray-700 rounded-xl px-4 py-3">
+                    <span class="text-gray-400">नाम</span>
+                    <span class="font-bold">NepseNiti</span>
+                </div>
+                <div class="flex justify-between items-center bg-gray-700 rounded-xl px-4 py-3">
+                    <span class="text-gray-400">रकम</span>
+                    <span class="font-bold text-red-400">Rs. 299</span>
+                </div>
+            </div>
+
+            <div class="mt-4 bg-yellow-900 border border-yellow-700 rounded-xl p-3 text-xs text-yellow-300">
+                ⚠️ भुक्तानी गरेपछि screenshot सहित WhatsApp/Telegram मा पठाउनुहोस्:<br>
+                <strong>@NepseNitiBot</strong> — /pay command पठाउनुहोस्
+            </div>
+        </div>
+
+        <!-- CTA -->
+        {% if user %}
+            <a href="/dashboard" class="block w-full bg-red-600 hover:bg-red-700 text-white text-center font-bold py-4 rounded-2xl transition text-lg">
+                Dashboard हेर्नुहोस् →
+            </a>
+        {% else %}
+            <a href="/signup" class="block w-full bg-red-600 hover:bg-red-700 text-white text-center font-bold py-4 rounded-2xl transition text-lg">
+                अहिले सुरु गर्नुहोस् →
+            </a>
+        {% endif %}
+
+        <p class="text-center text-gray-500 text-xs mt-4">
+            प्रश्न छ? Telegram: @NepseNitiBot
+        </p>
+    </div>
+</div>
+
+<!-- TESTIMONIAL PLACEHOLDER -->
+<div class="max-w-lg mx-auto mt-12">
+    <h2 class="text-2xl font-bold text-center mb-6">किन NepseNiti?</h2>
+    <div class="grid grid-cols-1 gap-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+            <p class="text-gray-300">"दैनिक ४ बजे alert आउँछ, बजार बन्द हुनु अगाडि नै थाहा पाउँछु।"</p>
+            <p class="text-gray-500 text-sm mt-2">— NEPSE Investor, Kathmandu</p>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+            <p class="text-gray-300">"AI analysis नेपालीमा पाउँछु, बुझ्न सजिलो छ।"</p>
+            <p class="text-gray-500 text-sm mt-2">— Portfolio Holder, Pokhara</p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

@@ -410,8 +410,123 @@ NepseNiti 🇳🇵"""
 # SCHEDULER - 4PM NST = 10:15 UTC
 # ============================================
 
+# ============================================
+# WEEKLY MARKET SUMMARY - Friday 6PM NST
+# ============================================
+
+def send_weekly_summary():
+    print("Sending NepseNiti weekly summary...")
+
+    market  = get_market_data()
+    stocks  = market["stocks"]
+    sectors = market["sectors"]
+    overall = market["overall"]
+
+    # Top 5 gainers and losers of the week (using today as proxy)
+    gainers = sorted(stocks, key=lambda x: float(x.get("pc", 0)), reverse=True)[:5]
+    losers  = sorted(stocks, key=lambda x: float(x.get("pc", 0)))[:5]
+
+    # Top sector by turnover
+    top_sector = max(sectors, key=lambda x: float(x.get("t", 0))) if sectors else {}
+    total_turnover = float(overall.get("t", 0))
+
+    gainers_text = ""
+    for g in gainers:
+        gainers_text += f"📈 {g['s']}: +{g['pc']}% (Rs.{g['lp']})
+"
+
+    losers_text = ""
+    for l in losers:
+        losers_text += f"📉 {l['s']}: {l['pc']}% (Rs.{l['lp']})
+"
+
+    # AI weekly market prompt
+    sector_lines = ""
+    for s in sorted(sectors, key=lambda x: float(x.get("t",0)), reverse=True)[:6]:
+        sector_lines += f"- {s['s']}: Rs.{round(float(s.get('t',0))/10000000, 1)} Cr
+"
+
+    prompt = f"""तपाईं नेपाल शेयर बजारका अनुभवी विश्लेषक हुनुहुन्छ।
+यो हप्ताको NEPSE बजारको संक्षिप्त साप्ताहिक विश्लेषण नेपाली भाषामा दिनुहोस्।
+
+आजको बजार डेटा:
+- कुल कारोबार: Rs.{round(total_turnover/10000000, 1)} Crore
+- कारोबार भएका stocks: {overall.get('st', 'N/A')}
+
+Sector कारोबार:
+{sector_lines}
+
+Top Gainers:
+{gainers_text}
+
+Top Losers:
+{losers_text}
+
+विश्लेषणमा समावेश गर्नुहोस्:
+१. यो हप्ता बजारको समग्र अवस्था
+२. कुन sector राम्रो/कमजोर रह्यो
+३. आउने हप्ताको लागि के हेर्ने
+४. लगानीकर्ताहरूलाई सुझाव
+
+५-७ लाइनमा, नेपाली भाषामा, practical र specific लेख्नुहोस्।"""
+
+    try:
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=800,
+            temperature=0.7,
+        )
+        ai_summary = completion.choices[0].message.content
+    except Exception as e:
+        ai_summary = "AI analysis उपलब्ध छैन।"
+
+    message = f"""📊 <b>NepseNiti साप्ताहिक रिपोर्ट 🇳🇵</b>
+शुक्रबार बजार सारांश
+
+━━━━━━━━━━━━━━
+📈 <b>Top Gainers:</b>
+{gainers_text}
+📉 <b>Top Losers:</b>
+{losers_text}
+━━━━━━━━━━━━━━
+🏦 <b>कुल कारोबार:</b> Rs.{round(total_turnover/10000000, 1)} Crore
+🏆 <b>सबैभन्दा सक्रिय Sector:</b> {top_sector.get('s', 'N/A')}
+
+━━━━━━━━━━━━━━
+🤖 <b>AI साप्ताहिक विश्लेषण:</b>
+{ai_summary}
+
+━━━━━━━━━━━━━━
+🌐 <a href="https://nepseniti.up.railway.app/dashboard">Dashboard हेर्नुहोस्</a>
+NepseNiti 🇳🇵 | NPR 299/महिना"""
+
+    # Send to all users with alerts enabled
+    users = get_all_users()
+    sent = 0
+    for user in users:
+        try:
+            if not user.get("alerts_enabled"):
+                continue
+            chat_id = user.get("telegram_chat_id")
+            if not chat_id:
+                continue
+            send_telegram_message(chat_id, message)
+            sent += 1
+        except Exception as e:
+            print(f"Weekly alert error for {user.get('email')}: {e}")
+
+    print(f"Weekly summary sent to {sent} users.")
+
+# ============================================
+# SCHEDULER
+# ============================================
+
 scheduler = BackgroundScheduler()
-scheduler.add_job(send_daily_alerts, 'cron', hour=10, minute=15)
+# Daily alert: 4PM NST = 10:15 UTC
+scheduler.add_job(send_daily_alerts,   'cron', hour=10, minute=15)
+# Weekly summary: Friday 6PM NST = Friday 12:15 UTC
+scheduler.add_job(send_weekly_summary, 'cron', day_of_week='fri', hour=12, minute=15)
 scheduler.start()
 
 # ============================================
@@ -926,6 +1041,30 @@ def test_alert():
 def run_alerts():
     send_daily_alerts()
     return "Daily alerts executed!"
+
+# ============================================
+# ESEWA PAYMENT PAGE
+# ============================================
+
+@app.route("/pricing")
+def pricing():
+    if "user" in session:
+        user = session["user"]
+    else:
+        user = None
+    return render_template("pricing.html", user=user)
+
+@app.route("/payment_confirm", methods=["POST"])
+def payment_confirm():
+    if "user" not in session:
+        return redirect("/login")
+    flash("भुक्तानी प्राप्त भयो! हामी छिट्टै तपाईंको account activate गर्नेछौं।", "success")
+    return redirect("/dashboard")
+
+@app.route("/run_weekly")
+def run_weekly():
+    send_weekly_summary()
+    return "Weekly summary sent!"
 
 # ============================================
 # ADMIN PAGE
