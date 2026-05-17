@@ -170,122 +170,95 @@
 
     </div>
 
-    <table class="w-full min-w-[1100px]">
-
+    <!-- DESKTOP TABLE -->
+<div class="hidden md:block overflow-x-auto">
+<table class="w-full text-sm">
         <thead>
-
             <tr class="border-b border-gray-800 text-left text-gray-400">
-
                 <th class="pb-4">Symbol</th>
                 <th class="pb-4">Qty</th>
                 <th class="pb-4">Buy Price</th>
                 <th class="pb-4">LTP</th>
-                <th class="pb-4">Today %</th>
+                <th class="pb-4">Change%</th>
                 <th class="pb-4">Invested</th>
-                <th class="pb-4">Current Value</th>
+                <th class="pb-4">Value</th>
                 <th class="pb-4">P/L</th>
-                <th class="pb-4">P/L %</th>
+                <th class="pb-4">P/L%</th>
                 <th class="pb-4">Action</th>
-
             </tr>
-
         </thead>
-
         <tbody>
-
             {% for item in portfolio %}
-
-            <tr class="border-b border-gray-800">
-
-                <!-- SYMBOL -->
-                <td class="py-5 font-bold text-lg">
-                    {{ item.symbol }}
+            <tr class="border-b border-gray-800 hover:bg-gray-800 transition">
+                <td class="py-4 font-bold text-white">{{ item.symbol }}</td>
+                <td class="py-4 text-gray-300">{{ item.qty }}</td>
+                <td class="py-4 text-gray-300">{{ "{:,.2f}".format(item.buy_price) }}</td>
+                <td class="py-4 font-semibold">{{ "{:,.2f}".format(item.ltp) }}</td>
+                <td class="py-4 font-semibold {% if item.change >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                    {% if item.change >= 0 %}+{% endif %}{{ item.change }}%
                 </td>
-
-                <!-- QTY -->
-                <td class="py-5">
-                    {{ item.qty }}
+                <td class="py-4 text-gray-300">{{ "{:,.0f}".format(item.invested) }}</td>
+                <td class="py-4 text-gray-300">{{ "{:,.0f}".format(item.current) }}</td>
+                <td class="py-4 font-bold {% if item.pnl >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                    {% if item.pnl >= 0 %}+{% endif %}{{ "{:,.0f}".format(item.pnl) }}
                 </td>
-
-                <!-- BUY PRICE -->
-                <td class="py-5">
-                    Rs. {{ item.buy_price }}
+                <td class="py-4 {% if item.pnl_pct >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                    {{ "{:.1f}".format(item.pnl_pct) }}%
                 </td>
-
-                <!-- LTP -->
-                <td class="py-5">
-                    Rs. {{ item.ltp }}
-                </td>
-
-                <!-- CHANGE -->
-                <td class="py-5
-                    {% if item.change >= 0 %}
-                        text-green-400
-                    {% else %}
-                        text-red-400
-                    {% endif %}
-                ">
-
-                    {{ item.change }}%
-
-                </td>
-
-                <!-- INVESTED -->
-                <td class="py-5">
-                    Rs. {{ "{:,.2f}".format(item.invested) }}
-                </td>
-
-                <!-- CURRENT -->
-                <td class="py-5">
-                    Rs. {{ "{:,.2f}".format(item.current) }}
-                </td>
-
-                <!-- PNL -->
-                <td class="py-5
-                    {% if item.pnl >= 0 %}
-                        text-green-400
-                    {% else %}
-                        text-red-400
-                    {% endif %}
-                ">
-
-                    Rs. {{ "{:,.2f}".format(item.pnl) }}
-
-                </td>
-
-                <!-- PNL % -->
-                <td class="py-5
-                    {% if item.pnl_percent >= 0 %}
-                        text-green-400
-                    {% else %}
-                        text-red-400
-                    {% endif %}
-                ">
-
-                    {{ "{:.2f}".format(item.pnl_percent) }}%
-
-                </td>
-
-                <!-- DELETE -->
-                <td class="py-5">
-
+                <td class="py-4">
                     <a href="/delete_stock/{{ item.id }}"
-                       onclick="return confirm('Delete this stock?')"
-                       class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm">
-
+                       onclick="return confirm('Delete {{ item.symbol }}?')"
+                       class="bg-red-900 hover:bg-red-800 text-red-400 px-3 py-1.5 rounded-lg text-xs transition">
                         Delete
-
                     </a>
-
                 </td>
-
             </tr>
-
             {% endfor %}
-
         </tbody>
+</table>
+</div>
 
-    </table>
+<!-- MOBILE CARDS -->
+<div class="md:hidden space-y-3">
+    {% for item in portfolio %}
+    <div class="bg-gray-800 rounded-2xl p-4">
+        <div class="flex justify-between items-start mb-3">
+            <div>
+                <span class="font-bold text-lg">{{ item.symbol }}</span>
+                <span class="text-gray-400 text-sm ml-2">{{ item.qty }} कित्ता</span>
+            </div>
+            <span class="font-bold {% if item.pnl >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                {% if item.pnl >= 0 %}+{% endif %}{{ "{:,.0f}".format(item.pnl) }}
+            </span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-sm mb-3">
+            <div class="bg-gray-700 rounded-xl px-3 py-2">
+                <p class="text-gray-400 text-xs">Buy Price</p>
+                <p class="font-semibold">Rs.{{ "{:,.2f}".format(item.buy_price) }}</p>
+            </div>
+            <div class="bg-gray-700 rounded-xl px-3 py-2">
+                <p class="text-gray-400 text-xs">LTP</p>
+                <p class="font-semibold">Rs.{{ "{:,.2f}".format(item.ltp) }}</p>
+            </div>
+            <div class="bg-gray-700 rounded-xl px-3 py-2">
+                <p class="text-gray-400 text-xs">Invested</p>
+                <p class="font-semibold">Rs.{{ "{:,.0f}".format(item.invested) }}</p>
+            </div>
+            <div class="bg-gray-700 rounded-xl px-3 py-2">
+                <p class="text-gray-400 text-xs">P/L%</p>
+                <p class="font-semibold {% if item.pnl_pct >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                    {{ "{:.1f}".format(item.pnl_pct) }}%
+                </p>
+            </div>
+        </div>
+        <a href="/delete_stock/{{ item.id }}"
+           onclick="return confirm('Delete {{ item.symbol }}?')"
+           class="block w-full text-center bg-red-900 hover:bg-red-800 text-red-400 py-2 rounded-xl text-sm transition">
+            🗑️ Delete
+        </a>
+    </div>
+    {% endfor %}
+</div>
 
 </div>
 
