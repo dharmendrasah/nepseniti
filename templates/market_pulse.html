@@ -1,0 +1,192 @@
+
+
+{% extends "base.html" %}
+{% block content %}
+
+<!-- HEADER -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <div>
+        <h1 class="text-4xl font-bold">📡 Market Pulse</h1>
+        <p class="text-gray-400 mt-1">आजको NEPSE बजारको real-time AI analysis</p>
+    </div>
+    <a href="/market" class="mt-4 md:mt-0 border border-gray-700 hover:border-gray-500 px-5 py-2.5 rounded-xl transition text-sm">
+        🔄 Refresh
+    </a>
+</div>
+
+<!-- MARKET OVERVIEW -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 text-center">
+        <p class="text-gray-400 text-xs mb-1">Total Turnover</p>
+        <p class="font-bold text-lg">Rs.{{ "{:,.1f}".format(market_overview.total_turnover / 10000000) }}Cr</p>
+    </div>
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 text-center">
+        <p class="text-gray-400 text-xs mb-1">Volume</p>
+        <p class="font-bold text-lg">{{ "{:,}".format(market_overview.total_volume|int) }}</p>
+    </div>
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 text-center">
+        <p class="text-gray-400 text-xs mb-1">Transactions</p>
+        <p class="font-bold text-lg">{{ "{:,}".format(market_overview.total_txn|int) }}</p>
+    </div>
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 text-center">
+        <p class="text-gray-400 text-xs mb-1">Stocks Traded</p>
+        <p class="font-bold text-lg">{{ market_overview.stocks_traded }}</p>
+    </div>
+</div>
+
+<!-- AI MARKET COMMENTARY -->
+<div class="bg-gray-900 border border-red-800 rounded-2xl p-6 mb-8">
+    <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-xl">🤖</div>
+        <div>
+            <h2 class="text-xl font-bold">AI Market Commentary</h2>
+            <p class="text-gray-400 text-xs">Real data को आधारमा आजको बजार विश्लेषण</p>
+        </div>
+    </div>
+    <div class="text-gray-200 leading-relaxed space-y-3">
+        {% for line in ai_commentary.split('\n') %}
+            {% if line.startswith('**') %}
+                <h3 class="font-bold text-white mt-3">{{ line.replace('**','') }}</h3>
+            {% elif line.strip() == '' %}
+                <div class="h-1"></div>
+            {% else %}
+                <p>{{ line }}</p>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+<!-- SMART MONEY ALERTS -->
+{% if pulse.smart_money %}
+<div class="bg-gray-900 border border-orange-800 rounded-2xl p-6 mb-8">
+    <h2 class="text-xl font-bold mb-2">🔍 Smart Money Signals</h2>
+    <p class="text-gray-400 text-sm mb-5">असामान्य volume भएका stocks — ठूला लगानीकर्ताको activity हुन सक्छ</p>
+    <div class="space-y-3">
+        {% for s in pulse.smart_money %}
+        <div class="bg-gray-800 rounded-2xl p-4">
+            <div class="flex flex-wrap justify-between items-start gap-2 mb-2">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">{{ s.vol_emoji }}</span>
+                    <div>
+                        <span class="font-bold text-lg">{{ s.symbol }}</span>
+                        <span class="text-gray-400 text-xs ml-2">{{ s.sector }}</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="font-bold text-lg {% if s.change >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                        {% if s.change >= 0 %}+{% endif %}{{ s.change }}%
+                    </span>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-xs mb-2">
+                <div class="bg-gray-700 rounded-lg px-2 py-1.5 text-center">
+                    <p class="text-gray-400">LTP</p>
+                    <p class="font-semibold">Rs.{{ s.lp }}</p>
+                </div>
+                <div class="bg-gray-700 rounded-lg px-2 py-1.5 text-center">
+                    <p class="text-gray-400">Volume</p>
+                    <p class="font-semibold text-orange-400">{{ s.vol_ratio }}x avg</p>
+                </div>
+                <div class="bg-gray-700 rounded-lg px-2 py-1.5 text-center">
+                    <p class="text-gray-400">Intraday</p>
+                    <p class="font-semibold {% if s.intraday >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                        {% if s.intraday >= 0 %}▲{% else %}▼{% endif %}{{ s.intraday }}%
+                    </p>
+                </div>
+            </div>
+            {% if s.pattern %}
+            <p class="text-sm text-orange-300 bg-orange-950 rounded-lg px-3 py-2">{{ s.pattern }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-8 text-center">
+    <p class="text-4xl mb-2">✅</p>
+    <p class="font-semibold">आज कुनै unusual smart money signal छैन</p>
+    <p class="text-gray-400 text-sm mt-1">बजार सामान्य रूपमा चलेको छ</p>
+</div>
+{% endif %}
+
+<!-- TOP VOLUME + GAINERS + LOSERS -->
+<div class="grid md:grid-cols-3 gap-6 mb-8">
+
+    <!-- TOP VOLUME -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <h2 class="font-bold text-lg mb-4">🔥 Top Volume</h2>
+        <div class="space-y-2">
+            {% for s in pulse.top_volume[:7] %}
+            <div class="flex justify-between items-center text-sm">
+                <div>
+                    <span class="font-semibold">{{ s.symbol }}</span>
+                    <span class="text-gray-500 text-xs ml-1">{{ s.vol_emoji }}</span>
+                </div>
+                <div class="text-right">
+                    <span class="text-orange-400 font-semibold">{{ s.vol_ratio }}x</span>
+                    <span class="text-gray-500 text-xs ml-1">({{ "{:,}".format(s.volume) }})</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- TOP GAINERS -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <h2 class="font-bold text-lg mb-4 text-green-400">📈 Top Gainers</h2>
+        <div class="space-y-2">
+            {% for s in pulse.gainers[:7] %}
+            <div class="flex justify-between items-center text-sm">
+                <span class="font-semibold">{{ s.symbol }}</span>
+                <span class="text-green-400 font-bold">+{{ s.change }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- TOP LOSERS -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <h2 class="font-bold text-lg mb-4 text-red-400">📉 Top Losers</h2>
+        <div class="space-y-2">
+            {% for s in pulse.losers[:7] %}
+            <div class="flex justify-between items-center text-sm">
+                <span class="font-semibold">{{ s.symbol }}</span>
+                <span class="text-red-400 font-bold">{{ s.change }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+<!-- SECTOR HEAT -->
+<div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-8">
+    <h2 class="text-xl font-bold mb-5">🏦 Sector Heat</h2>
+    <div class="space-y-3">
+        {% for sec in pulse.sectors %}
+        <div>
+            <div class="flex justify-between text-sm mb-1">
+                <span class="font-semibold">{{ sec.name }}</span>
+                <span class="text-gray-400">Rs.{{ "{:,.1f}".format(sec.turnover / 10000000) }}Cr &nbsp;({{ sec.pct }}%)</span>
+            </div>
+            <div class="w-full bg-gray-800 rounded-full h-2.5">
+                <div class="h-2.5 rounded-full
+                    {% if loop.index == 1 %}bg-red-500
+                    {% elif loop.index == 2 %}bg-orange-500
+                    {% elif loop.index == 3 %}bg-yellow-500
+                    {% else %}bg-blue-600{% endif %}"
+                    style="width: {{ [sec.pct * 2, 100]|min }}%">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- DISCLAIMER -->
+<div class="bg-yellow-900 border border-yellow-700 rounded-2xl p-4 text-sm text-yellow-300">
+    ⚠️ <strong>Disclaimer:</strong> Smart Money signals volume analysis मात्र हो। यो investment advice होइन। आफ्नो research गर्नुहोस्।
+</div>
+
+{% endblock %}
+

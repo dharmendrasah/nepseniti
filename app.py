@@ -174,6 +174,156 @@ SECTOR_MAP = {
 waiting_for_email = {}
 
 # ============================================
+# SMART MONEY DETECTION
+# ============================================
+
+def analyze_volume_signal(symbol, volume, change, lp, op, turnover, market_avg_vol):
+    """Detect smart money / unusual volume patterns"""
+    if market_avg_vol <= 0:
+        return "normal", "⚪", "सामान्य"
+
+    vol_ratio = volume / market_avg_vol
+    intraday  = round((lp - op) / op * 100, 2) if op > 0 else 0
+
+    # Classify volume
+    if vol_ratio >= 5:
+        vol_tier = "very_high"
+        vol_emoji = "🔴"
+        vol_label = f"धेरै बढी ({vol_ratio:.1f}x)"
+    elif vol_ratio >= 3:
+        vol_tier = "high"
+        vol_emoji = "🟠"
+        vol_label = f"बढी ({vol_ratio:.1f}x)"
+    elif vol_ratio >= 1.5:
+        vol_tier = "above_avg"
+        vol_emoji = "🟡"
+        vol_label = f"सामान्यभन्दा बढी ({vol_ratio:.1f}x)"
+    else:
+        vol_tier = "normal"
+        vol_emoji = "⚪"
+        vol_label = "सामान्य"
+
+    # Smart money patterns
+    smart_money = False
+    pattern = ""
+
+    # High volume + price up = accumulation
+    if vol_tier in ["very_high","high"] and change >= 1:
+        smart_money = True
+        pattern = "📈 Accumulation — ठूलो volume सँग मूल्य बढेको"
+
+    # High volume + price down = distribution
+    elif vol_tier in ["very_high","high"] and change <= -1:
+        smart_money = True
+        pattern = "📉 Distribution — ठूलो volume सँग मूल्य घटेको"
+
+    # High volume + flat price = absorption
+    elif vol_tier in ["very_high","high"] and abs(change) < 1:
+        smart_money = True
+        pattern = "🔄 Absorption — ठूलो volume तर मूल्य स्थिर (accumulation हुन सक्छ)"
+
+    # Price strong intraday recovery
+    if intraday >= 2 and change >= 0:
+        pattern = (pattern + " | 💪 Intraday recovery राम्रो") if pattern else "💪 Intraday मा राम्रो recovery"
+
+    return {
+        "vol_ratio":   round(vol_ratio, 1),
+        "vol_tier":    vol_tier,
+        "vol_emoji":   vol_emoji,
+        "vol_label":   vol_label,
+        "smart_money": smart_money,
+        "pattern":     pattern,
+        "intraday":    intraday,
+    }
+
+
+# ============================================
+# MARKET PULSE - All active stocks analysis
+# ============================================
+
+def get_market_pulse():
+    """Get full market analysis - top movers, smart money, sector heat"""
+    market  = get_market_data()
+    stocks  = market["stocks"]
+    sectors = market["sectors"]
+    overall = market["overall"]
+
+    total_volume   = float(overall.get("q", 0))
+    total_stocks   = int(overall.get("st", 1))
+    total_turnover = float(overall.get("t", 0))
+    market_avg_vol = total_volume / total_stocks if total_stocks > 0 else 1
+
+    pulse_stocks = []
+    smart_money_alerts = []
+
+    for s in stocks:
+        symbol   = s.get("s","")
+        lp       = float(s.get("lp", 0))
+        change   = float(s.get("pc", 0))
+        volume   = float(s.get("q",  0))
+        turnover = float(s.get("t",  0))
+        high     = float(s.get("h",  0))
+        low      = float(s.get("l",  0))
+        op       = float(s.get("op", 0))
+        sector   = SECTOR_MAP.get(symbol, "Other")
+
+        analysis = analyze_volume_signal(symbol, volume, change, lp, op, turnover, market_avg_vol)
+
+        stock_data = {
+            "symbol":      symbol,
+            "sector":      sector,
+            "lp":          lp,
+            "change":      change,
+            "volume":      int(volume),
+            "turnover":    turnover,
+            "high":        high,
+            "low":         low,
+            "open":        op,
+            "intraday":    analysis["intraday"],
+            "vol_ratio":   analysis["vol_ratio"],
+            "vol_tier":    analysis["vol_tier"],
+            "vol_emoji":   analysis["vol_emoji"],
+            "vol_label":   analysis["vol_label"],
+            "smart_money": analysis["smart_money"],
+            "pattern":     analysis["pattern"],
+        }
+        pulse_stocks.append(stock_data)
+
+        if analysis["smart_money"]:
+            smart_money_alerts.append(stock_data)
+
+    # Sort smart money by volume ratio
+    smart_money_alerts = sorted(smart_money_alerts, key=lambda x: x["vol_ratio"], reverse=True)[:10]
+
+    # Top gainers / losers
+    gainers = sorted(pulse_stocks, key=lambda x: x["change"], reverse=True)[:10]
+    losers  = sorted(pulse_stocks, key=lambda x: x["change"])[:10]
+
+    # Top by volume
+    top_volume = sorted(pulse_stocks, key=lambda x: x["vol_ratio"], reverse=True)[:10]
+
+    # Sector summary
+    sector_data = []
+    for sec in sorted(sectors, key=lambda x: float(x.get("t",0)), reverse=True)[:8]:
+        t   = float(sec.get("t", 0))
+        pct = round(t / total_turnover * 100, 1) if total_turnover > 0 else 0
+        sector_data.append({
+            "name": sec["s"], "turnover": t, "pct": pct
+        })
+
+    return {
+        "smart_money":    smart_money_alerts,
+        "gainers":        gainers,
+        "losers":         losers,
+        "top_volume":     top_volume,
+        "sectors":        sector_data,
+        "total_turnover": total_turnover,
+        "total_stocks":   total_stocks,
+        "market_avg_vol": market_avg_vol,
+        "overall":        overall,
+    }
+
+# ============================================
 # GET LIVE NEPSE DATA
 # ============================================
 
@@ -406,6 +556,50 @@ NepseNiti 🇳🇵"""
         except Exception as e:
             print("Alert Error:", e)
 
+def send_smart_money_alert():
+    """Send smart money alerts when unusual volume detected"""
+    pulse = get_market_pulse()
+    alerts = pulse["smart_money"]
+
+    if not alerts:
+        print("No smart money signals today.")
+        return
+
+    alert_lines = ""
+    for s in alerts[:8]:
+        alert_lines += (
+            f"\n{'📈' if s['change'] >= 0 else '📉'} <b>{s['symbol']}</b> ({s['sector']})"
+            f"\n   Volume: {s['vol_ratio']}x average | Change: {s['change']}%"
+            f"\n   {s['pattern']}"
+            f"\n"
+        )
+
+    message = f"""🔍 <b>NepseNiti Smart Money Alert 🇳🇵</b>
+
+आज असामान्य volume भएका stocks:
+{alert_lines}
+━━━━━━━━━━━━━━
+📊 कुल बजार: Rs.{round(pulse['total_turnover']/10000000,1)} Cr
+⚠️ यो technical observation मात्र हो — investment advice होइन।
+
+🌐 <a href="https://nepseniti.up.railway.app/market">Market Pulse हेर्नुहोस्</a>"""
+
+    users = get_all_users()
+    sent = 0
+    for user in users:
+        try:
+            if not user.get("alerts_enabled"):
+                continue
+            chat_id = user.get("telegram_chat_id")
+            if not chat_id:
+                continue
+            send_telegram_message(chat_id, message)
+            sent += 1
+        except Exception as e:
+            print(f"Smart money alert error: {e}")
+
+    print(f"Smart money alert sent to {sent} users.")
+
 # ============================================
 # SCHEDULER - 4PM NST = 10:15 UTC
 # ============================================
@@ -515,15 +709,61 @@ NepseNiti 🇳🇵 | NPR 299/महिना"""
 
     print(f"Weekly summary sent to {sent} users.")
 
+def send_smart_money_alert():
+    """Send smart money alerts when unusual volume detected"""
+    pulse = get_market_pulse()
+    alerts = pulse["smart_money"]
+
+    if not alerts:
+        print("No smart money signals today.")
+        return
+
+    alert_lines = ""
+    for s in alerts[:8]:
+        alert_lines += (
+            f"\n{'📈' if s['change'] >= 0 else '📉'} <b>{s['symbol']}</b> ({s['sector']})"
+            f"\n   Volume: {s['vol_ratio']}x average | Change: {s['change']}%"
+            f"\n   {s['pattern']}"
+            f"\n"
+        )
+
+    message = f"""🔍 <b>NepseNiti Smart Money Alert 🇳🇵</b>
+
+आज असामान्य volume भएका stocks:
+{alert_lines}
+━━━━━━━━━━━━━━
+📊 कुल बजार: Rs.{round(pulse['total_turnover']/10000000,1)} Cr
+⚠️ यो technical observation मात्र हो — investment advice होइन।
+
+🌐 <a href="https://nepseniti.up.railway.app/market">Market Pulse हेर्नुहोस्</a>"""
+
+    users = get_all_users()
+    sent = 0
+    for user in users:
+        try:
+            if not user.get("alerts_enabled"):
+                continue
+            chat_id = user.get("telegram_chat_id")
+            if not chat_id:
+                continue
+            send_telegram_message(chat_id, message)
+            sent += 1
+        except Exception as e:
+            print(f"Smart money alert error: {e}")
+
+    print(f"Smart money alert sent to {sent} users.")
+
 # ============================================
 # SCHEDULER
 # ============================================
 
 scheduler = BackgroundScheduler()
 # Daily alert: 4PM NST = 10:15 UTC
-scheduler.add_job(send_daily_alerts,   'cron', hour=10, minute=15)
+scheduler.add_job(send_daily_alerts,    'cron', hour=10, minute=15)
 # Weekly summary: Friday 6PM NST = Friday 12:15 UTC
-scheduler.add_job(send_weekly_summary, 'cron', day_of_week='fri', hour=12, minute=15)
+scheduler.add_job(send_weekly_summary,  'cron', day_of_week='fri', hour=12, minute=15)
+# Smart money alert: 3:30PM NST = 9:45 UTC (before market close)
+scheduler.add_job(send_smart_money_alert, 'cron', hour=9, minute=45)
 scheduler.start()
 
 # ============================================
@@ -1062,6 +1302,84 @@ def payment_confirm():
 def run_weekly():
     send_weekly_summary()
     return "Weekly summary sent!"
+
+@app.route("/run_smart_money")
+def run_smart_money():
+    send_smart_money_alert()
+    return "Smart money alert sent!"
+
+
+# ============================================
+# MARKET PULSE PAGE
+# ============================================
+
+@app.route("/market")
+def market_pulse():
+    if "user" not in session:
+        return redirect("/login")
+
+    pulse = get_market_pulse()
+    overall = pulse["overall"]
+
+    market_overview = {
+        "total_turnover": pulse["total_turnover"],
+        "total_volume":   overall.get("q", "0"),
+        "total_txn":      overall.get("tn", "0"),
+        "stocks_traded":  overall.get("st", "0"),
+        "market_cap":     float(overall.get("mc", 0)),
+    }
+
+    # AI market commentary
+    smart_names = [s["symbol"] for s in pulse["smart_money"][:5]]
+    top_gainer  = pulse["gainers"][0] if pulse["gainers"] else {}
+    top_loser   = pulse["losers"][0]  if pulse["losers"]  else {}
+
+    sector_lines = ""
+    for sec in pulse["sectors"][:5]:
+        sector_lines += f"- {sec['name']}: {sec['pct']}% (Rs.{round(sec['turnover']/10000000,1)} Cr)\n"
+
+    smart_lines = ""
+    for s in pulse["smart_money"][:5]:
+        smart_lines += f"- {s['symbol']} ({s['sector']}): volume {s['vol_ratio']}x average, change {s['change']}%, pattern: {s['pattern']}\n"
+
+    ai_prompt = f"""तपाईं NEPSE बजारका expert विश्लेषक हुनुहुन्छ। आजको real market data हेरेर smart analysis नेपालीमा दिनुहोस्।
+
+आजको बजार:
+- कुल कारोबार: Rs.{round(pulse['total_turnover']/10000000,1)} Crore
+- कारोबार stocks: {pulse['total_stocks']}
+- सबैभन्दा बढेको: {top_gainer.get('symbol','')} (+{top_gainer.get('change',0)}%)
+- सबैभन्दा घटेको: {top_loser.get('symbol','')} ({top_loser.get('change',0)}%)
+
+Sector-wise turnover:
+{sector_lines}
+
+Unusual Volume (Smart Money) stocks:
+{smart_lines if smart_lines else "- आज कुनै unusual volume देखिएन"}
+
+यो data को आधारमा नेपालीमा ३ paragraph मा लेख्नुहोस्:
+१. आजको बजारको समग्र अवस्था के छ?
+२. Smart money कहाँ छिरेको देखिन्छ र किन?
+३. लगानीकर्ताहरूलाई आज के गर्न सुझाव दिनुहुन्छ?
+
+Specific stock names र numbers प्रयोग गर्नुहोस्। Generic नलेख्नुहोस्।"""
+
+    try:
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": ai_prompt}],
+            max_tokens=600,
+            temperature=0.7,
+        )
+        ai_commentary = completion.choices[0].message.content
+    except Exception as e:
+        ai_commentary = f"AI commentary उपलब्ध छैन: {str(e)}"
+
+    return render_template(
+        "market_pulse.html",
+        pulse=pulse,
+        market_overview=market_overview,
+        ai_commentary=ai_commentary,
+    )
 
 # ============================================
 # ADMIN PAGE

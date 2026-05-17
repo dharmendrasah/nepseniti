@@ -14,69 +14,56 @@
 
     <!-- NAVBAR -->
     <nav class="bg-gray-900 border-b border-gray-800">
-    <div class="max-w-7xl mx-auto px-4 py-4">
-        <div class="flex justify-between items-center">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
 
-            <!-- LOGO -->
-            <a href="/" class="text-2xl font-bold text-red-500">NepseNiti</a>
+            <a href="/" class="text-2xl font-bold text-red-500">
+                NepseNiti
+            </a>
 
-            <!-- HAMBURGER BUTTON (mobile only) -->
-            <button id="menu-btn" class="md:hidden text-gray-300 hover:text-white focus:outline-none">
-                <svg id="menu-icon" class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                </svg>
-                <svg id="close-icon" class="w-7 h-7 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
+            <div class="space-x-4">
 
-            <!-- DESKTOP NAV -->
-            <div class="hidden md:flex items-center space-x-6 text-sm font-medium">
                 {% if session.get('user') %}
-                    <a href="/dashboard"      class="text-gray-300 hover:text-white transition">Dashboard</a>
-                    <a href="/portfolio"      class="text-gray-300 hover:text-white transition">Portfolio</a>
-                    <a href="/analysis"       class="text-gray-300 hover:text-white transition">AI Analysis</a>
-                    <a href="/notifications"  class="text-gray-300 hover:text-white transition">Notifications</a>
-                    <a href="/pricing"        class="text-green-400 hover:text-green-300 transition">💚 Pricing</a>
-                    <a href="/logout"         class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition">Logout</a>
+
+                    <a href="/dashboard" class="text-gray-300 hover:text-white">
+                        Dashboard
+                    </a>
+
+                    <a href="/portfolio" class="text-gray-300 hover:text-white">
+                        Portfolio
+                    </a>
+
+                    <a href="/analysis" class="text-gray-300 hover:text-white">
+                        AI Analysis
+                    </a>
+
+                    <a href="/notifications" class="text-gray-300 hover:text-white">
+                        Notifications
+                    </a>
+
+                    <a href="/pricing" class="hover:text-red-400 transition">💚 Pricing</a>
+                <a href="/logout"
+                       class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg">
+                        Logout
+                    </a>
+
                 {% else %}
-                    <a href="/pricing"        class="text-green-400 hover:text-green-300 transition">💚 Pricing</a>
-                    <a href="/login"          class="text-gray-300 hover:text-white transition">Login</a>
-                    <a href="/signup"         class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition">Sign Up</a>
+
+                    <a href="/login"
+                       class="text-gray-300 hover:text-white">
+                        Login
+                    </a>
+
+                    <a href="/signup"
+                       class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg">
+                        Get Started
+                    </a>
+
                 {% endif %}
+
             </div>
-        </div>
 
-        <!-- MOBILE NAV (hidden by default) -->
-        <div id="mobile-menu" class="hidden md:hidden mt-4 pb-4 border-t border-gray-800 pt-4 space-y-3">
-            {% if session.get('user') %}
-                <a href="/dashboard"     class="block text-gray-300 hover:text-white py-2 px-3 rounded-lg hover:bg-gray-800 transition">📊 Dashboard</a>
-                <a href="/portfolio"     class="block text-gray-300 hover:text-white py-2 px-3 rounded-lg hover:bg-gray-800 transition">💼 Portfolio</a>
-                <a href="/analysis"      class="block text-gray-300 hover:text-white py-2 px-3 rounded-lg hover:bg-gray-800 transition">🤖 AI Analysis</a>
-                <a href="/notifications" class="block text-gray-300 hover:text-white py-2 px-3 rounded-lg hover:bg-gray-800 transition">📱 Notifications</a>
-                <a href="/pricing"       class="block text-green-400 hover:text-green-300 py-2 px-3 rounded-lg hover:bg-gray-800 transition">💚 Pricing</a>
-                <a href="/logout"        class="block bg-red-600 hover:bg-red-700 text-white text-center py-2 px-3 rounded-lg transition">Logout</a>
-            {% else %}
-                <a href="/pricing"       class="block text-green-400 hover:text-green-300 py-2 px-3 rounded-lg hover:bg-gray-800 transition">💚 Pricing</a>
-                <a href="/login"         class="block text-gray-300 hover:text-white py-2 px-3 rounded-lg hover:bg-gray-800 transition">Login</a>
-                <a href="/signup"        class="block bg-red-600 hover:bg-red-700 text-white text-center py-2 px-3 rounded-lg transition">Sign Up</a>
-            {% endif %}
         </div>
-    </div>
-
-    <!-- HAMBURGER TOGGLE SCRIPT -->
-    <script>
-        const btn  = document.getElementById('menu-btn');
-        const menu = document.getElementById('mobile-menu');
-        const menuIcon  = document.getElementById('menu-icon');
-        const closeIcon = document.getElementById('close-icon');
-        btn.addEventListener('click', () => {
-            menu.classList.toggle('hidden');
-            menuIcon.classList.toggle('hidden');
-            closeIcon.classList.toggle('hidden');
-        });
-    </script>
-</nav>
+    </nav>
 
     <!-- FLASH MESSAGES -->
     <div class="max-w-7xl mx-auto px-4 mt-4">
