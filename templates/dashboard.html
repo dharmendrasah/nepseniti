@@ -143,9 +143,7 @@
         <a href="/portfolio" class="text-red-500 hover:text-red-400 text-sm">Full Portfolio →</a>
     </div>
     {% if holdings %}
-    <!-- DESKTOP TABLE -->
-    <div class="hidden md:block overflow-x-auto">
-    <table class="w-full text-sm">
+    <table class="w-full min-w-[750px] text-sm">
         <thead>
             <tr class="text-left border-b border-gray-700 text-gray-400">
                 <th class="pb-3">Symbol</th>
@@ -187,46 +185,6 @@
             {% endfor %}
         </tbody>
     </table>
-    </div>
-
-    <!-- MOBILE CARDS -->
-    <div class="md:hidden space-y-3">
-        {% for item in holdings %}
-        <div class="bg-gray-800 rounded-2xl p-4">
-            <div class="flex justify-between items-start mb-3">
-                <div>
-                    <span class="font-bold text-lg">{{ item.symbol }}</span>
-                    {% if item.volume_flag %}<span class="ml-1">{{ item.volume_flag }}</span>{% endif %}
-                </div>
-                <span class="font-bold text-lg {% if item.pnl >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
-                    {% if item.pnl >= 0 %}+{% endif %}{{ "{:,.0f}".format(item.pnl) }}
-                </span>
-            </div>
-            <div class="grid grid-cols-2 gap-2 text-sm">
-                <div class="bg-gray-700 rounded-xl px-3 py-2">
-                    <p class="text-gray-400 text-xs">LTP</p>
-                    <p class="font-semibold">Rs.{{ "{:,.2f}".format(item.ltp) }}</p>
-                </div>
-                <div class="bg-gray-700 rounded-xl px-3 py-2">
-                    <p class="text-gray-400 text-xs">Change</p>
-                    <p class="font-semibold {% if item.change >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
-                        {% if item.change >= 0 %}+{% endif %}{{ item.change }}%
-                    </p>
-                </div>
-                <div class="bg-gray-700 rounded-xl px-3 py-2">
-                    <p class="text-gray-400 text-xs">P/L%</p>
-                    <p class="font-semibold {% if item.pnl_pct >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
-                        {{ "{:.1f}".format(item.pnl_pct) }}%
-                    </p>
-                </div>
-                <div class="bg-gray-700 rounded-xl px-3 py-2">
-                    <p class="text-gray-400 text-xs">Volume</p>
-                    <p class="font-semibold">{{ "{:,}".format(item.volume) }}</p>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
     {% else %}
     <div class="text-center py-16">
         <p class="text-5xl mb-4">📊</p>
