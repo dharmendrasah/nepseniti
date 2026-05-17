@@ -432,19 +432,16 @@ def send_weekly_summary():
 
     gainers_text = ""
     for g in gainers:
-        gainers_text += f"📈 {g['s']}: +{g['pc']}% (Rs.{g['lp']})
-"
+        gainers_text += f"📈 {g['s']}: +{g['pc']}% (Rs.{g['lp']})\n"
 
     losers_text = ""
     for l in losers:
-        losers_text += f"📉 {l['s']}: {l['pc']}% (Rs.{l['lp']})
-"
+        losers_text += f"📉 {l['s']}: {l['pc']}% (Rs.{l['lp']})\n"
 
     # AI weekly market prompt
     sector_lines = ""
     for s in sorted(sectors, key=lambda x: float(x.get("t",0)), reverse=True)[:6]:
-        sector_lines += f"- {s['s']}: Rs.{round(float(s.get('t',0))/10000000, 1)} Cr
-"
+        sector_lines += f"- {s['s']}: Rs.{round(float(s.get('t',0))/10000000, 1)} Cr\n"
 
     prompt = f"""तपाईं नेपाल शेयर बजारका अनुभवी विश्लेषक हुनुहुन्छ।
 यो हप्ताको NEPSE बजारको संक्षिप्त साप्ताहिक विश्लेषण नेपाली भाषामा दिनुहोस्।
