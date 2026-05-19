@@ -14,7 +14,9 @@ from groq import Groq
 
 app = Flask(__name__)
 load_dotenv()
-app.secret_key = "nepseniti-super-secret-key"
+app.secret_key = "nepseniti-super-secret-2024-xyz-!@#"
+app.config["SESSION_COOKIE_SIZE"] = 8192
+app.config["PERMANENT_SESSION_LIFETIME"] = 3600
 
 # ============================================
 # CREDENTIALS
@@ -1393,11 +1395,7 @@ def assistant():
     user  = session["user"]
     email = user["email"]
 
-    # Load conversation history from session
-    if "chat_history" not in session:
-        session["chat_history"] = []
-
-    # Build portfolio context (always fresh)
+    # Build portfolio context
     p_url     = f"{SUPABASE_URL}/rest/v1/portfolios?user_name=eq.{email}"
     p_resp    = requests.get(p_url, headers=headers)
     portfolio = p_resp.json()
@@ -1427,73 +1425,60 @@ def assistant():
         portfolio_lines += (
             f"- {symbol} ({sector}): {qty} कित्ता, "
             f"खरिद Rs.{buy_price}, LTP Rs.{ltp}, "
-            f"Change {change}%, "
             f"P/L Rs.{round(pnl,0)} ({pnl_pct}%)\n"
         )
 
     total_pnl     = total_current - total_invested
     total_pnl_pct = round(total_pnl / total_invested * 100, 2) if total_invested > 0 else 0
 
-    # System prompt with user portfolio context
-    system_prompt = f"""तपाईं NepseNiti का AI financial assistant हुनुहुन्छ — नेपाली NEPSE लगानीकर्ताहरूका लागि।
-
-तपाईंसँग यो user को real portfolio data छ:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    system_prompt = f"""तपाईं NepseNiti का AI financial assistant हुनुहुन्छ।
 User: {user.get('name', '')}
-कुल लगानी: Rs.{round(total_invested, 0)}
-हालको मूल्य: Rs.{round(total_current, 0)}
-कुल नाफा/घाटा: Rs.{round(total_pnl, 0)} ({total_pnl_pct}%)
-Holdings:
-{portfolio_lines if portfolio_lines else "Portfolio खाली छ।"}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Portfolio: {portfolio_lines if portfolio_lines else "खाली"}
+कुल P/L: Rs.{round(total_pnl, 0)} ({total_pnl_pct}%)
+सधैं नेपाली भाषामा छोटो र practical जवाफ दिनुहोस्। Educational purpose मात्र।"""
 
-Rules:
-1. सधैं नेपाली भाषामा जवाफ दिनुहोस्
-2. सरल र व्यावहारिक भाषा प्रयोग गर्नुहोस्
-3. User को portfolio data प्रयोग गरेर specific जवाफ दिनुहोस्
-4. Finance, trading, NEPSE, smart money, personal finance सबैको जवाफ दिनुहोस्
-5. यदि price prediction माग्छन् भने honestly भन्नुहोस् exact prediction सम्भव छैन
-6. जवाफ concise राख्नुहोस् — ५-८ lines मात्र
-7. Disclaimer: educational purpose मात्र"""
-
-    # ── Handle POST (user sent a message) ────────────────────────────────
     if request.method == "POST":
         user_message = request.form.get("message", "").strip()
+        print(f"[ASSISTANT] User message: {user_message}")
 
         if user_message:
-            # Get current history
-            history = list(session.get("chat_history", []))
+            history = session.get("chat_history", [])
 
-            # Add user message
-            history.append({"role": "user", "content": user_message})
-
-            # Build messages for Groq
+            # Build Groq messages
             messages = [{"role": "system", "content": system_prompt}]
-            messages += history[-12:]  # last 6 exchanges
+            messages += history[-8:]
+            messages.append({"role": "user", "content": user_message})
 
             try:
+                print("[ASSISTANT] Calling Groq API...")
                 completion = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=messages,
-                    max_tokens=800,
+                    max_tokens=600,
                     temperature=0.7,
                 )
                 ai_reply = completion.choices[0].message.content
+                print(f"[ASSISTANT] Groq replied: {ai_reply[:80]}...")
+
+                # Keep only last 6 messages to avoid cookie overflow
+                history.append({"role": "user",      "content": user_message})
                 history.append({"role": "assistant", "content": ai_reply})
+                history = history[-6:]
+
+                session["chat_history"] = history
+                session.modified = True
+                print(f"[ASSISTANT] History saved. Length: {len(history)}")
 
             except Exception as e:
-                history.append({
-                    "role": "assistant",
-                    "content": f"माफ गर्नुहोस्, अहिले जवाफ दिन सकिएन। फेरि प्रयास गर्नुहोस्। Error: {str(e)}"
-                })
-
-            # Save updated history to session
-            session["chat_history"] = history
-            session.modified = True
+                print(f"[ASSISTANT] ERROR: {e}")
+                history.append({"role": "user", "content": user_message})
+                history.append({"role": "assistant", "content": f"माफ गर्नुहोस्, जवाफ दिन सकिएन। ({str(e)})"})
+                history = history[-6:]
+                session["chat_history"] = history
+                session.modified = True
 
         return redirect(url_for("assistant"))
 
-    # ── GET: render page ──────────────────────────────────────────────────
     return render_template(
         "assistant.html",
         user=user,
