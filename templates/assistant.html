@@ -162,10 +162,14 @@ function setQuestion(q) {
 
 // Show loading state on submit
 document.getElementById('chat-form').addEventListener('submit', function() {
+    const input = document.getElementById('message-input');
+    const val = input.value.trim();
+    if (!val) { return false; }
     document.getElementById('btn-text').classList.add('hidden');
     document.getElementById('btn-loading').classList.remove('hidden');
     document.getElementById('send-btn').disabled = true;
-    document.getElementById('message-input').disabled = true;
+    // Do NOT disable input - disabled fields are not submitted
+    input.readOnly = true;
 });
 </script>
 
