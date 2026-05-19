@@ -1,0 +1,165 @@
+
+
+{% extends "base.html" %}
+{% block content %}
+
+<div class="flex flex-col h-[calc(100vh-80px)] max-w-4xl mx-auto">
+
+    <!-- HEADER -->
+    <div class="flex items-center justify-between mb-4 flex-shrink-0">
+        <div>
+            <h1 class="text-2xl font-bold">🤖 AI Financial Assistant</h1>
+            <p class="text-gray-400 text-sm">तपाईंको portfolio जान्दछ — नेपालीमा सोध्नुहोस्</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="/assistant/clear"
+               onclick="return confirm('Chat history clear गर्ने?')"
+               class="text-xs border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-lg transition">
+                🗑️ Clear Chat
+            </a>
+        </div>
+    </div>
+
+    <!-- PORTFOLIO MINI SUMMARY -->
+    {% if portfolio %}
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-3 mb-4 flex-shrink-0">
+        <div class="flex flex-wrap gap-4 text-sm">
+            <div>
+                <span class="text-gray-400">Portfolio:</span>
+                <span class="font-semibold ml-1">Rs.{{ "{:,.0f}".format(total_current) }}</span>
+            </div>
+            <div>
+                <span class="text-gray-400">P/L:</span>
+                <span class="font-semibold ml-1 {% if total_pnl >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                    {% if total_pnl >= 0 %}+{% endif %}Rs.{{ "{:,.0f}".format(total_pnl) }}
+                    ({{ "{:.1f}".format(total_pnl_pct) }}%)
+                </span>
+            </div>
+            <div>
+                <span class="text-gray-400">Stocks:</span>
+                <span class="font-semibold ml-1">{{ portfolio|length }}</span>
+            </div>
+            <div class="text-gray-500 text-xs self-center">AI लाई तपाईंको portfolio थाहा छ ✅</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- SUGGESTED QUESTIONS -->
+    {% if not chat_history %}
+    <div class="mb-4 flex-shrink-0">
+        <p class="text-gray-400 text-xs mb-2">सुझावित प्रश्नहरू:</p>
+        <div class="flex flex-wrap gap-2">
+            {% set suggestions = [
+                "मेरो portfolio कस्तो छ?",
+                "Smart money भनेको के हो?",
+                "PE ratio कसरी हेर्ने?",
+                "मेरो कुन stock बेच्ने?",
+                "NEPSE मा कसरी लगानी गर्ने?",
+                "Bonus share र dividend फरक के हो?",
+                "Bull market र Bear market के हो?",
+                "Stop loss भनेको के हो?"
+            ] %}
+            {% for q in suggestions %}
+            <button onclick="setQuestion('{{ q }}')"
+                class="text-xs bg-gray-800 hover:bg-gray-700 border border-gray-700 px-3 py-1.5 rounded-full transition">
+                {{ q }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- CHAT MESSAGES -->
+    <div class="flex-1 overflow-y-auto space-y-4 mb-4 pr-1" id="chat-box">
+
+        {% if not chat_history %}
+        <div class="text-center py-12">
+            <div class="text-6xl mb-4">🤖</div>
+            <p class="text-xl font-semibold mb-2">नमस्ते, {{ user.name }}!</p>
+            <p class="text-gray-400">म तपाईंको NEPSE AI assistant हुँ।<br>
+            Finance, stocks, trading बारे नेपालीमा सोध्नुहोस्।</p>
+        </div>
+        {% endif %}
+
+        {% for msg in chat_history %}
+
+        {% if msg.role == "user" %}
+        <!-- USER MESSAGE -->
+        <div class="flex justify-end">
+            <div class="bg-red-600 text-white rounded-2xl rounded-tr-sm px-4 py-3 max-w-[80%] text-sm">
+                {{ msg.content }}
+            </div>
+        </div>
+
+        {% else %}
+        <!-- AI MESSAGE -->
+        <div class="flex justify-start gap-3">
+            <div class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0 text-sm">🤖</div>
+            <div class="bg-gray-800 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%] text-sm leading-relaxed">
+                {% for line in msg.content.split('\n') %}
+                    {% if line.startswith('**') %}
+                        <p class="font-bold text-white mt-2 mb-1">{{ line.replace('**','') }}</p>
+                    {% elif line.startswith('- ') or line.startswith('• ') %}
+                        <p class="flex gap-2 my-0.5"><span class="text-red-400 flex-shrink-0">▸</span><span>{{ line[2:] }}</span></p>
+                    {% elif line.strip() == '' %}
+                        <div class="h-1"></div>
+                    {% else %}
+                        <p class="my-0.5">{{ line }}</p>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% endfor %}
+    </div>
+
+    <!-- INPUT BOX -->
+    <div class="flex-shrink-0">
+        <form method="POST" action="/assistant" class="flex gap-2" id="chat-form">
+            <input
+                type="text"
+                name="message"
+                id="message-input"
+                placeholder="यहाँ प्रश्न सोध्नुहोस्... (e.g. मेरो NABIL बेच्ने कि राख्ने?)"
+                class="flex-1 bg-gray-800 border border-gray-700 focus:border-red-500 rounded-2xl px-4 py-3 text-sm outline-none transition"
+                autocomplete="off"
+                required
+            />
+            <button type="submit" id="send-btn"
+                class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-2xl font-semibold transition flex items-center gap-2">
+                <span id="btn-text">Send</span>
+                <span id="btn-loading" class="hidden">...</span>
+            </button>
+        </form>
+        <p class="text-gray-600 text-xs mt-2 text-center">
+            ⚠️ Educational purpose मात्र — investment advice होइन
+        </p>
+    </div>
+</div>
+
+<script>
+// Auto scroll to bottom
+function scrollToBottom() {
+    const box = document.getElementById('chat-box');
+    box.scrollTop = box.scrollHeight;
+}
+scrollToBottom();
+
+// Set suggested question
+function setQuestion(q) {
+    document.getElementById('message-input').value = q;
+    document.getElementById('message-input').focus();
+}
+
+// Show loading state on submit
+document.getElementById('chat-form').addEventListener('submit', function() {
+    document.getElementById('btn-text').classList.add('hidden');
+    document.getElementById('btn-loading').classList.remove('hidden');
+    document.getElementById('send-btn').disabled = true;
+    document.getElementById('message-input').disabled = true;
+});
+</script>
+
+{% endblock %}
+

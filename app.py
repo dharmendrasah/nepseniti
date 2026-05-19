@@ -1382,6 +1382,141 @@ Specific stock names र numbers प्रयोग गर्नुहोस्�
     )
 
 # ============================================
+# AI ASSISTANT - Nepali Finance Chat
+# ============================================
+
+@app.route("/assistant", methods=["GET", "POST"])
+def assistant():
+    if "user" not in session:
+        return redirect("/login")
+
+    user  = session["user"]
+    email = user["email"]
+
+    # Load conversation history from session
+    if "chat_history" not in session:
+        session["chat_history"] = []
+
+    # Build portfolio context
+    p_url  = f"{SUPABASE_URL}/rest/v1/portfolios?user_name=eq.{email}"
+    p_resp = requests.get(p_url, headers=headers)
+    portfolio = p_resp.json()
+
+    market   = get_market_data()
+    stocks   = market["stocks"]
+    stock_lk = {s["s"]: s for s in stocks}
+
+    total_invested = 0
+    total_current  = 0
+    portfolio_lines = ""
+
+    for item in portfolio:
+        symbol    = item["symbol"]
+        qty       = item["quantity"]
+        buy_price = item["buy_price"]
+        s         = stock_lk.get(symbol.upper(), {})
+        ltp       = float(s.get("lp", buy_price))
+        change    = float(s.get("pc", 0))
+        invested  = qty * buy_price
+        current   = qty * ltp
+        pnl       = current - invested
+        pnl_pct   = round(pnl / invested * 100, 2) if invested > 0 else 0
+        sector    = SECTOR_MAP.get(symbol.upper(), "Other")
+        total_invested += invested
+        total_current  += current
+        portfolio_lines += (
+            f"- {symbol} ({sector}): {qty} कित्ता, "
+            f"खरिद Rs.{buy_price}, LTP Rs.{ltp}, "
+            f"Change {change}%, "
+            f"नाफा/घाटा Rs.{round(pnl,0)} ({pnl_pct}%)\n"
+        )
+
+    total_pnl     = total_current - total_invested
+    total_pnl_pct = round(total_pnl / total_invested * 100, 2) if total_invested > 0 else 0
+
+    # System prompt with user portfolio context
+    system_prompt = f"""तपाईं NepseNiti का AI financial assistant हुनुहुन्छ — नेपाली NEPSE लगानीकर्ताहरूका लागि।
+
+तपाईंले यो user को portfolio थाहा छ:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+User: {user.get('name', '')}
+कुल लगानी: Rs.{round(total_invested, 0)}
+हालको मूल्य: Rs.{round(total_current, 0)}
+कुल नाफा/घाटा: Rs.{round(total_pnl, 0)} ({total_pnl_pct}%)
+
+Holdings:
+{portfolio_lines if portfolio_lines else "Portfolio खाली छ।"}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+तपाईंको काम:
+- सबै जवाफ नेपाली भाषामा दिनुहोस्
+- सरल र व्यावहारिक भाषा प्रयोग गर्नुहोस्
+- User को portfolio data प्रयोग गरेर specific जवाफ दिनुहोस्
+- Finance, trading, NEPSE, smart money, investment सम्बन्धी जुनसुकै प्रश्नको जवाफ दिनुहोस्
+- यदि price prediction माग्छन् भने honestly भन्नुहोस् कि exact prediction सम्भव छैन
+- Disclaimer: यो educational purpose मात्र हो, investment advice होइन"""
+
+    ai_reply = None
+    error     = None
+
+    if request.method == "POST":
+        user_message = request.form.get("message", "").strip()
+
+        if user_message:
+            # Add user message to history
+            session["chat_history"].append({
+                "role": "user",
+                "content": user_message
+            })
+
+            # Build messages for API
+            messages = [{"role": "system", "content": system_prompt}]
+            # Keep last 10 messages for context (5 exchanges)
+            messages += session["chat_history"][-10:]
+
+            try:
+                completion = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=messages,
+                    max_tokens=800,
+                    temperature=0.7,
+                )
+                ai_reply = completion.choices[0].message.content
+
+                # Add AI reply to history
+                session["chat_history"].append({
+                    "role": "assistant",
+                    "content": ai_reply
+                })
+                session.modified = True
+
+            except Exception as e:
+                error = f"AI सँग कुरा गर्न सकिएन: {str(e)}"
+
+        return redirect("/assistant")
+
+    return render_template(
+        "assistant.html",
+        user=user,
+        chat_history=session.get("chat_history", []),
+        portfolio=portfolio,
+        total_invested=total_invested,
+        total_current=total_current,
+        total_pnl=total_pnl,
+        total_pnl_pct=total_pnl_pct,
+        error=error,
+    )
+
+
+@app.route("/assistant/clear")
+def assistant_clear():
+    if "user" not in session:
+        return redirect("/login")
+    session["chat_history"] = []
+    session.modified = True
+    return redirect("/assistant")
+
+# ============================================
 # ADMIN PAGE
 # ============================================
 
