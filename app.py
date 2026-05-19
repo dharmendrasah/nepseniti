@@ -1397,17 +1397,17 @@ def assistant():
     if "chat_history" not in session:
         session["chat_history"] = []
 
-    # Build portfolio context
-    p_url  = f"{SUPABASE_URL}/rest/v1/portfolios?user_name=eq.{email}"
-    p_resp = requests.get(p_url, headers=headers)
+    # Build portfolio context (always fresh)
+    p_url     = f"{SUPABASE_URL}/rest/v1/portfolios?user_name=eq.{email}"
+    p_resp    = requests.get(p_url, headers=headers)
     portfolio = p_resp.json()
 
     market   = get_market_data()
     stocks   = market["stocks"]
     stock_lk = {s["s"]: s for s in stocks}
 
-    total_invested = 0
-    total_current  = 0
+    total_invested  = 0
+    total_current   = 0
     portfolio_lines = ""
 
     for item in portfolio:
@@ -1428,7 +1428,7 @@ def assistant():
             f"- {symbol} ({sector}): {qty} कित्ता, "
             f"खरिद Rs.{buy_price}, LTP Rs.{ltp}, "
             f"Change {change}%, "
-            f"नाफा/घाटा Rs.{round(pnl,0)} ({pnl_pct}%)\n"
+            f"P/L Rs.{round(pnl,0)} ({pnl_pct}%)\n"
         )
 
     total_pnl     = total_current - total_invested
@@ -1437,42 +1437,39 @@ def assistant():
     # System prompt with user portfolio context
     system_prompt = f"""तपाईं NepseNiti का AI financial assistant हुनुहुन्छ — नेपाली NEPSE लगानीकर्ताहरूका लागि।
 
-तपाईंले यो user को portfolio थाहा छ:
+तपाईंसँग यो user को real portfolio data छ:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 User: {user.get('name', '')}
 कुल लगानी: Rs.{round(total_invested, 0)}
 हालको मूल्य: Rs.{round(total_current, 0)}
 कुल नाफा/घाटा: Rs.{round(total_pnl, 0)} ({total_pnl_pct}%)
-
 Holdings:
 {portfolio_lines if portfolio_lines else "Portfolio खाली छ।"}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-तपाईंको काम:
-- सबै जवाफ नेपाली भाषामा दिनुहोस्
-- सरल र व्यावहारिक भाषा प्रयोग गर्नुहोस्
-- User को portfolio data प्रयोग गरेर specific जवाफ दिनुहोस्
-- Finance, trading, NEPSE, smart money, investment सम्बन्धी जुनसुकै प्रश्नको जवाफ दिनुहोस्
-- यदि price prediction माग्छन् भने honestly भन्नुहोस् कि exact prediction सम्भव छैन
-- Disclaimer: यो educational purpose मात्र हो, investment advice होइन"""
+Rules:
+1. सधैं नेपाली भाषामा जवाफ दिनुहोस्
+2. सरल र व्यावहारिक भाषा प्रयोग गर्नुहोस्
+3. User को portfolio data प्रयोग गरेर specific जवाफ दिनुहोस्
+4. Finance, trading, NEPSE, smart money, personal finance सबैको जवाफ दिनुहोस्
+5. यदि price prediction माग्छन् भने honestly भन्नुहोस् exact prediction सम्भव छैन
+6. जवाफ concise राख्नुहोस् — ५-८ lines मात्र
+7. Disclaimer: educational purpose मात्र"""
 
-    ai_reply = None
-    error     = None
-
+    # ── Handle POST (user sent a message) ────────────────────────────────
     if request.method == "POST":
         user_message = request.form.get("message", "").strip()
 
         if user_message:
-            # Add user message to history
-            session["chat_history"].append({
-                "role": "user",
-                "content": user_message
-            })
+            # Get current history
+            history = list(session.get("chat_history", []))
 
-            # Build messages for API
+            # Add user message
+            history.append({"role": "user", "content": user_message})
+
+            # Build messages for Groq
             messages = [{"role": "system", "content": system_prompt}]
-            # Keep last 10 messages for context (5 exchanges)
-            messages += session["chat_history"][-10:]
+            messages += history[-12:]  # last 6 exchanges
 
             try:
                 completion = client.chat.completions.create(
@@ -1482,19 +1479,21 @@ Holdings:
                     temperature=0.7,
                 )
                 ai_reply = completion.choices[0].message.content
-
-                # Add AI reply to history
-                session["chat_history"].append({
-                    "role": "assistant",
-                    "content": ai_reply
-                })
-                session.modified = True
+                history.append({"role": "assistant", "content": ai_reply})
 
             except Exception as e:
-                error = f"AI सँग कुरा गर्न सकिएन: {str(e)}"
+                history.append({
+                    "role": "assistant",
+                    "content": f"माफ गर्नुहोस्, अहिले जवाफ दिन सकिएन। फेरि प्रयास गर्नुहोस्। Error: {str(e)}"
+                })
 
-        return redirect("/assistant")
+            # Save updated history to session
+            session["chat_history"] = history
+            session.modified = True
 
+        return redirect(url_for("assistant"))
+
+    # ── GET: render page ──────────────────────────────────────────────────
     return render_template(
         "assistant.html",
         user=user,
@@ -1504,7 +1503,6 @@ Holdings:
         total_current=total_current,
         total_pnl=total_pnl,
         total_pnl_pct=total_pnl_pct,
-        error=error,
     )
 
 
